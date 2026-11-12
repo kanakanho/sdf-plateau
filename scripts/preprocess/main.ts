@@ -1,6 +1,6 @@
 /**
  * CLI: CityGML (PLATEAU bldg, EPSG:6697) -> public/data/city.bin + city.json
- *   npm run preprocess -- [inputDir=data/raw] [outDir=public/data]
+ *   pnpm preprocess [inputDir=data/raw] [outDir=public/data]
  * I/O lives here only; all transformation logic is in pure, tested modules.
  */
 import { createReadStream } from 'node:fs';

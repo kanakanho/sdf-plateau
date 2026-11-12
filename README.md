@@ -5,17 +5,19 @@ PLATEAU の建築物モデル（LOD2、無い建物は LOD1）を、WebGPU 上�
 - 対象範囲: 3 次メッシュ 53394610 / 611 / 620 / 621（約 2.3km × 2.0km、建物 2,548 棟、三角形 72 万）
 - 背景地図: 地理院タイル（淡色・標準・航空写真）
 
-加工済みデータ（`public/data/`）を同梱しているので、`npm install && npm run dev` だけで表示できます。
+加工済みデータ（`public/data/`）を同梱しているので、`pnpm install && pnpm dev` だけで表示できます。
 
 ## 使い方
 
 ```bash
-npm install
+pnpm install
 # データを作り直す場合のみ: CityGML (EPSG:6697) を data/raw/ に置いてから
-npm run preprocess      # -> public/data/city.bin, city.json
-npm run dev             # http://localhost:5173
-npm test                # Vitest（WGSL の関数は Dawn = npm `webgpu` で GPU 実行して検証）
+pnpm preprocess         # -> public/data/city.bin, city.json
+pnpm dev                # http://localhost:5173
+pnpm test               # Vitest（WGSL の関数は Dawn = npm パッケージ `webgpu` で GPU 実行して検証）
 ```
+
+パッケージ管理には [pnpm](https://pnpm.io/) を使います（`package.json` の `packageManager` を参照。Corepack を有効にすると自動で揃います）。依存パッケージのインストールスクリプトは、`pnpm-workspace.yaml` の `allowBuilds` で許可した `esbuild` と `webgpu` だけが実行されます。
 
 WebGPU に対応したブラウザ（Chrome / Edge / Safari 26 以降）が必要です。
 
@@ -68,4 +70,4 @@ WebGPU に対応したブラウザ（Chrome / Edge / Safari 26 以降）が必�
 
 ## 使用しているソフトウェアのライセンス
 
-地図の描画に [MapLibre GL JS](https://maplibre.org/)（BSD 3-Clause）を使っています。`npm run build` の出力には、同梱している第三者ソフトウェア（MapLibre GL JS、Vite のランタイム）のライセンス全文を `THIRD_PARTY_LICENSES.txt` として含めます。
+地図の描画に [MapLibre GL JS](https://maplibre.org/)（BSD 3-Clause）を使っています。`pnpm build` の出力には、同梱している第三者ソフトウェア（MapLibre GL JS、Vite のランタイム）のライセンス全文を `THIRD_PARTY_LICENSES.txt` として含めます。
