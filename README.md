@@ -12,7 +12,7 @@ PLATEAU の建築物モデル（LOD2、無い建物は LOD1）を、WebGPU 上�
 ```bash
 pnpm install
 # データを作り直す場合のみ: CityGML (EPSG:6697) を data/raw/ に置いてから
-pnpm preprocess         # -> public/data/city.bin, city.json
+pnpm preprocess         # -> public/data/city.bin.gz, city.json
 pnpm dev                # http://localhost:5173
 pnpm test               # Vitest（WGSL の関数は Dawn = npm パッケージ `webgpu` で GPU 実行して検証）
 ```

@@ -1,6 +1,6 @@
 # このディレクトリのデータについて
 
-`city.bin` と `city.json` は、国土交通省 Project PLATEAU の 3D 都市モデルを加工して作成したデータです。
+`city.bin.gz`（gzip 圧縮したメッシュ）と `city.json` は、国土交通省 Project PLATEAU の 3D 都市モデルを加工して作成したデータです。
 
 ## 出典
 
