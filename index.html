@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SDF PLATEAU 東京駅</title>
+  </head>
+  <body>
+    <div id="map"></div>
+    <aside id="panel">
+      <h1>SDF PLATEAU <small>東京駅周辺</small></h1>
+      <label>描画
+        <select id="mode">
+          <option value="sdf">SDF レイマーチ</option>
+          <option value="raster">ラスタ（比較用）</option>
+        </select>
+      </label>
+      <label>色分け
+        <select id="color">
+          <option value="0">面の種類</option>
+          <option value="1">高さ</option>
+          <option value="2">用途</option>
+          <option value="3">建築年</option>
+          <option value="4">ステップ数（デバッグ）</option>
+        </select>
+      </label>
+      <label>日付 <input id="date" type="date" /></label>
+      <label class="row">時刻 <input id="time" type="range" min="0" max="1439" step="1" /> <span id="time-label"></span>
+        <button id="play" type="button">▶</button></label>
+      <fieldset>
+        <label class="check"><input id="shadows" type="checkbox" /> 影（ソフトシャドウ）</label>
+        <label class="check"><input id="groundShadows" type="checkbox" /> 地面の影</label>
+        <label class="check"><input id="ao" type="checkbox" /> アンビエントオクルージョン</label>
+        <label class="check"><input id="refine" type="checkbox" /> 交点を三角形で補正</label>
+        <label class="check"><input id="picking" type="checkbox" /> クリックで建物を選択</label>
+      </fieldset>
+      <label class="row">解像度 <input id="scale" type="range" min="0.25" max="1" step="0.05" /> <span id="scale-label"></span></label>
+      <label>背景地図
+        <select id="base">
+          <option value="pale">淡色地図</option>
+          <option value="std">標準地図</option>
+          <option value="photo">航空写真</option>
+        </select>
+      </label>
+      <p id="fps"></p>
+      <p id="status"></p>
+    </aside>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

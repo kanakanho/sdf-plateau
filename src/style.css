@@ -1,0 +1,33 @@
+:root {
+  color-scheme: light dark;
+  --panel-bg: rgba(255, 255, 255, 0.92);
+  --panel-fg: #1d232b;
+  --muted: #5b6672;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --panel-bg: rgba(24, 28, 34, 0.92); --panel-fg: #e8edf2; --muted: #9aa6b2; }
+}
+html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, 'Hiragino Sans', sans-serif; background: #ddd; }
+#map { position: absolute; inset: 0; }
+.gpu-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+.maplibregl-ctrl-bottom-right, .maplibregl-ctrl-bottom-left, .maplibregl-popup { z-index: 2; }
+#panel {
+  position: absolute; top: 12px; left: 12px; z-index: 3; width: 270px; max-height: calc(100% - 24px); overflow: auto;
+  padding: 12px 14px; border-radius: 10px; background: var(--panel-bg); color: var(--panel-fg);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2); font-size: 13px; display: flex; flex-direction: column; gap: 8px;
+}
+#panel h1 { font-size: 15px; margin: 0 0 4px; }
+#panel h1 small { font-weight: normal; color: var(--muted); }
+#panel label { display: flex; flex-direction: column; gap: 3px; }
+#panel label.row { flex-direction: row; align-items: center; gap: 6px; }
+#panel label.row input[type='range'] { flex: 1; }
+#panel label.check { flex-direction: row; align-items: center; gap: 6px; }
+#panel fieldset { border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+#panel select, #panel input[type='date'] { font: inherit; padding: 2px 4px; }
+#panel button { font: inherit; padding: 0 8px; }
+#fps { margin: 0; font-variant-numeric: tabular-nums; color: var(--muted); }
+#status { margin: 0; color: var(--muted); line-height: 1.4; }
+table.bldg { border-collapse: collapse; font-size: 12px; }
+table.bldg th { text-align: left; padding: 2px 8px 2px 0; color: #555; font-weight: 600; white-space: nowrap; vertical-align: top; }
+table.bldg td { padding: 2px 0; }
+@media (max-width: 600px) { #panel { width: auto; right: 12px; max-height: 45%; } }
