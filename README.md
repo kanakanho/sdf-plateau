@@ -5,11 +5,13 @@ PLATEAU の建築物モデル（LOD2、無い建物は LOD1）を、WebGPU 上�
 - 対象範囲: 3 次メッシュ 53394610 / 611 / 620 / 621（約 2.3km × 2.0km、建物 2,548 棟、三角形 72 万）
 - 背景地図: 地理院タイル（淡色・標準・航空写真）
 
+加工済みデータ（`public/data/`）を同梱しているので、`npm install && npm run dev` だけで表示できます。
+
 ## 使い方
 
 ```bash
 npm install
-# CityGML (EPSG:6697) を data/raw/ に置いてから
+# データを作り直す場合のみ: CityGML (EPSG:6697) を data/raw/ に置いてから
 npm run preprocess      # -> public/data/city.bin, city.json
 npm run dev             # http://localhost:5173
 npm test                # Vitest（WGSL の関数は Dawn = npm `webgpu` で GPU 実行して検証）
@@ -46,3 +48,16 @@ WebGPU に対応したブラウザ（Chrome / Edge / Safari 26 以降）が必�
 | `src/app` | 画面の状態（純粋関数）と DOM・地図の配線 |
 
 方針として、関数は小さく疎結合に保ち、ライブラリが要求する箇所（`new maplibregl.Map` など）以外ではクラスを使いません。
+
+## データの出典とライセンス
+
+`public/data/` のデータは、次のデータを加工して作成したものです。詳細は [public/data/ATTRIBUTION.md](public/data/ATTRIBUTION.md) を参照してください。
+
+> 出典：3D都市モデル（Project PLATEAU）建築物モデル（千代田区）2025年度（国土交通省 / 著作権 千代田区）
+> <https://www.geospatial.jp/ckan/dataset/plateau-13101-chiyoda-ku-2025>
+> 上記データを加工して作成（三角形化、ローカル座標への変換、地盤高の補正、属性の抽出）
+
+- 利用条件は [PLATEAU サイトポリシー](https://www.mlit.go.jp/plateau/site-policy/)（公共データ利用規約 第1.0版、CC BY 4.0 互換）に従います。
+- このリポジトリのデータは、国土交通省や千代田区が作成・公表したものではありません。
+- 元の CityGML（1 ファイル最大 250MB）は同梱していません。上記の配布ページから入手できます。
+- 背景地図は閲覧時に [地理院タイル](https://maps.gsi.go.jp/development/ichiran.html) を読み込んでおり、再配布はしていません。

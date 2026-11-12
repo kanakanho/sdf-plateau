@@ -33,6 +33,9 @@ describe('gsiStyle', () => {
     const src = s.sources.gsi as { tiles: string[]; attribution: string };
     expect(src.tiles[0]).toContain('seamlessphoto');
     expect(src.attribution).toContain('地理院タイル');
+    // PLATEAU data is redistributed in processed form: source + processing notice are required
+    expect(src.attribution).toContain('PLATEAU');
+    expect(src.attribution).toContain('加工して作成');
     expect(s.layers).toHaveLength(1);
   });
   it('defaults to the pale map', () => {

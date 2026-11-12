@@ -32,7 +32,7 @@ export const gsiStyle = (base: BaseMap = 'pale'): StyleSpecification => ({
       tiles: [TILE_URL[base]],
       tileSize: 256,
       maxzoom: 18,
-      attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">地理院タイル</a> | 3D都市モデル: <a href="https://www.mlit.go.jp/plateau/" target="_blank">PLATEAU</a>',
+      attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">地理院タイル</a> | <a href="https://www.geospatial.jp/ckan/dataset/plateau-13101-chiyoda-ku-2025" target="_blank">3D都市モデル（PLATEAU）千代田区</a>を加工して作成',
     },
   },
   layers: [{ id: 'gsi', type: 'raster', source: 'gsi' }],
