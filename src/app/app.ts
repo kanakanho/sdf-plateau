@@ -152,12 +152,19 @@ export const startApp = async (mapContainer: HTMLElement): Promise<void> => {
     }
   };
 
-  // 'load' may already have fired while the pipelines were being created
+  // The sync layer must exist in whatever style is active: 'load' may already have fired while the
+  // pipelines were being created, and setStyle() (base map switch) drops custom layers.
   const addSyncLayer = () => {
-    if (!map.getLayer('webgpu-sync')) map.addLayer(createSyncLayer('webgpu-sync', renderFrame));
+    if (map.getLayer('webgpu-sync')) return;
+    try {
+      map.addLayer(createSyncLayer('webgpu-sync', renderFrame));
+    } catch {
+      // style JSON not parsed yet ("Style is not done loading"); the next styledata event retries
+    }
   };
-  if (map.isStyleLoaded()) addSyncLayer();
-  else map.once('load', addSyncLayer);
+  addSyncLayer();
+  map.on('load', addSyncLayer);
+  map.on('styledata', addSyncLayer);
   map.on('resize', () => map.triggerRepaint());
 
   let popup: maplibregl.Popup | null = null;
@@ -173,7 +180,7 @@ export const startApp = async (mapContainer: HTMLElement): Promise<void> => {
     state,
     update,
     (base) => map.setStyle(gsiStyle(base)),
-    () => map.once('styledata', addSyncLayer),
+    () => map.triggerRepaint(),
     { lat: frame.originLat, lng: frame.originLng },
   );
 
