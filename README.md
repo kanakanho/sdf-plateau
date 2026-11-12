@@ -49,6 +49,10 @@ WebGPU に対応したブラウザ（Chrome / Edge / Safari 26 以降）が必�
 
 方針として、関数は小さく疎結合に保ち、ライブラリが要求する箇所（`new maplibregl.Map` など）以外ではクラスを使いません。
 
+## ライセンス
+
+ソースコードは [MIT License](LICENSE) です。`public/data/` のデータには MIT License は適用されず、次の出典の利用条件に従います。
+
 ## データの出典とライセンス
 
 `public/data/` のデータは、次のデータを加工して作成したものです。詳細は [public/data/ATTRIBUTION.md](public/data/ATTRIBUTION.md) を参照してください。
