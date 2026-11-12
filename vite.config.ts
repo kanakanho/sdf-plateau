@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitest/config';
+import { thirdPartyLicenses } from './scripts/licenses';
 
 export default defineConfig({
   server: { port: 5173 },
+  plugins: [thirdPartyLicenses()],
   test: {
     environment: 'node',
     pool: 'forks',

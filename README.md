@@ -61,3 +61,7 @@ WebGPU に対応したブラウザ（Chrome / Edge / Safari 26 以降）が必�
 - このリポジトリのデータは、国土交通省や千代田区が作成・公表したものではありません。
 - 元の CityGML（1 ファイル最大 250MB）は同梱していません。上記の配布ページから入手できます。
 - 背景地図は閲覧時に [地理院タイル](https://maps.gsi.go.jp/development/ichiran.html) を読み込んでおり、再配布はしていません。
+
+## 使用しているソフトウェアのライセンス
+
+地図の描画に [MapLibre GL JS](https://maplibre.org/)（BSD 3-Clause）を使っています。`npm run build` の出力には、同梱している第三者ソフトウェア（MapLibre GL JS、Vite のランタイム）のライセンス全文を `THIRD_PARTY_LICENSES.txt` として含めます。
