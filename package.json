@@ -1,0 +1,26 @@
+{
+  "name": "sdf-plateau",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "preprocess": "tsx scripts/preprocess/main.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@webgpu/types": "^0.1.74",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0",
+    "webgpu": "^0.6.2"
+  },
+  "dependencies": {
+    "earcut": "^3.2.4",
+    "maplibre-gl": "^6.18.0"
+  }
+}
