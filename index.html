@@ -7,8 +7,12 @@
   </head>
   <body>
     <div id="map"></div>
+    <button id="panel-show" type="button" title="パネルを表示" aria-label="パネルを表示">☰</button>
     <aside id="panel">
-      <h1>SDF PLATEAU <small>東京駅周辺</small></h1>
+      <header>
+        <h1>SDF PLATEAU <small>東京駅周辺</small></h1>
+        <button id="panel-hide" type="button" title="パネルを隠す" aria-label="パネルを隠す">×</button>
+      </header>
       <label>描画
         <select id="mode">
           <option value="sdf">SDF レイマーチ</option>

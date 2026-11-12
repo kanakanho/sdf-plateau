@@ -22,6 +22,13 @@ export const setStatus = (text: string): void => {
   if (el) el.textContent = text;
 };
 
+/** × hides the whole panel; the floating ☰ button brings it back. */
+export const bindPanelToggle = (): void => {
+  const setHidden = (hidden: boolean) => document.body.classList.toggle('panel-hidden', hidden);
+  $<HTMLButtonElement>('panel-hide').onclick = () => setHidden(true);
+  $<HTMLButtonElement>('panel-show').onclick = () => setHidden(false);
+};
+
 export const bindControls = (
   initial: ViewState,
   update: (patch: Partial<ViewState>) => void,

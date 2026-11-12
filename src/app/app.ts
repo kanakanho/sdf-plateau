@@ -31,7 +31,7 @@ import { createSceneResources } from '../render/scene';
 import { type BaseMap, baseMapStyle, createSyncLayer, mapAttributions } from '../map/syncLayer';
 import { buildingPopupHtml } from './popup';
 import { type ViewState, applyPatch, canvasSize, initialViewState, parseRefineFactor, renderFlags, sunLighting } from './viewState';
-import { bindControls, setStatus } from './controls';
+import { bindControls, bindPanelToggle, setStatus } from './controls';
 
 const VOXEL_SIZE = 1;
 const MAX_STEPS = 256;
@@ -178,6 +178,7 @@ export const startApp = async (mapContainer: HTMLElement): Promise<void> => {
     }
     map.triggerRepaint();
   };
+  bindPanelToggle();
   bindControls(
     state,
     update,
