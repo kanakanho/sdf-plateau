@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CustomRenderMethodInput } from 'maplibre-gl';
-import { createSyncLayer, extractMercatorMatrix, gsiStyle } from './syncLayer';
+import {
+  MAPLIBRE_ATTRIBUTION,
+  PLATEAU_ATTRIBUTION,
+  baseMapStyle,
+  createSyncLayer,
+  extractMercatorMatrix,
+  mapAttributions,
+} from './syncLayer';
 
 const fakeInput = (m: number[]) =>
   ({ defaultProjectionData: { mainMatrix: Float64Array.from(m) } }) as unknown as CustomRenderMethodInput;
@@ -27,18 +34,35 @@ describe('createSyncLayer', () => {
   });
 });
 
-describe('gsiStyle', () => {
-  it('builds a raster style for the requested base map', () => {
-    const s = gsiStyle('photo');
+describe('baseMapStyle', () => {
+  it('builds a GSI raster style for the requested base map', () => {
+    const s = baseMapStyle('photo');
     const src = s.sources.gsi as { tiles: string[]; attribution: string };
     expect(src.tiles[0]).toContain('seamlessphoto');
     expect(src.attribution).toContain('地理院タイル');
-    // PLATEAU data is redistributed in processed form: source + processing notice are required
-    expect(src.attribution).toContain('PLATEAU');
-    expect(src.attribution).toContain('加工して作成');
     expect(s.layers).toHaveLength(1);
   });
   it('defaults to the pale map', () => {
-    expect((gsiStyle().sources.gsi as { tiles: string[] }).tiles[0]).toContain('/pale/');
+    expect((baseMapStyle().sources.gsi as { tiles: string[] }).tiles[0]).toContain('/pale/');
+  });
+  it('white is a plain white background without tile sources', () => {
+    const s = baseMapStyle('white');
+    expect(s.sources).toEqual({});
+    expect(s.layers).toEqual([{ id: 'background', type: 'background', paint: { 'background-color': '#ffffff' } }]);
+  });
+});
+
+describe('PLATEAU_ATTRIBUTION', () => {
+  it('credits the source and states that the data was processed', () => {
+    expect(PLATEAU_ATTRIBUTION).toContain('PLATEAU');
+    expect(PLATEAU_ATTRIBUTION).toContain('千代田区');
+    expect(PLATEAU_ATTRIBUTION).toContain('加工して作成');
+  });
+});
+
+describe('mapAttributions', () => {
+  it('keeps the MapLibre credit next to the PLATEAU credit', () => {
+    expect(mapAttributions()).toEqual([MAPLIBRE_ATTRIBUTION, PLATEAU_ATTRIBUTION]);
+    expect(MAPLIBRE_ATTRIBUTION).toContain('https://maplibre.org/');
   });
 });

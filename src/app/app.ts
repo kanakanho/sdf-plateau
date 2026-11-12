@@ -28,7 +28,7 @@ import {
   readIdAt,
 } from '../render/renderers';
 import { createSceneResources } from '../render/scene';
-import { type BaseMap, createSyncLayer, gsiStyle } from '../map/syncLayer';
+import { type BaseMap, baseMapStyle, createSyncLayer, mapAttributions } from '../map/syncLayer';
 import { buildingPopupHtml } from './popup';
 import { type ViewState, applyPatch, canvasSize, initialViewState, parseRefineFactor, renderFlags, sunLighting } from './viewState';
 import { bindControls, setStatus } from './controls';
@@ -70,7 +70,9 @@ const createMap = (container: HTMLElement, frame: LocalFrame, base: BaseMap): ma
   maplibregl.setWorkerUrl(maplibreWorkerUrl);
   return new maplibregl.Map({
     container,
-    style: gsiStyle(base),
+    style: baseMapStyle(base),
+    // MapLibre's credit plus the PLATEAU credit, visible with every base map (also the tile-less white one)
+    attributionControl: { customAttribution: mapAttributions() },
     center: [frame.originLng, frame.originLat],
     zoom: 16.2,
     pitch: 60,
@@ -179,7 +181,7 @@ export const startApp = async (mapContainer: HTMLElement): Promise<void> => {
   bindControls(
     state,
     update,
-    (base) => map.setStyle(gsiStyle(base)),
+    (base) => map.setStyle(baseMapStyle(base)),
     () => map.triggerRepaint(),
     { lat: frame.originLat, lng: frame.originLng },
   );
