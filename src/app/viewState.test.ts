@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { RenderFlag } from '../render/frame';
-import { applyPatch, areaPagePath, canvasSize, formatMinutes, initialViewState, jstDate, renderFlags, sunIntensity, sunLighting } from './viewState';
+import { ColorMode, RenderFlag } from '../render/frame';
+import { applyPatch, areaPagePath, canvasSize, formatMinutes, initialViewState, isAnimated, jstDate, renderFlags, shapeViewOptions, sunIntensity, sunLighting } from './viewState';
 
 describe('renderFlags', () => {
   it('combines toggles into bit flags', () => {
@@ -138,5 +138,26 @@ describe('areaPagePath', () => {
   it('maps a slug to its page and empty to the station page', () => {
     expect(areaPagePath('nagoya')).toBe('/nagoya/');
     expect(areaPagePath('')).toBe('/');
+  });
+  it('puts the wave variant of every page under /waves/', () => {
+    expect(areaPagePath('nagoya', true)).toBe('/waves/nagoya/');
+    expect(areaPagePath('', true)).toBe('/waves/');
+    expect(areaPagePath('nagoya', false)).toBe('/nagoya/');
+  });
+});
+
+describe('shapeViewOptions', () => {
+  it('wave shells start in the wave colours and repaint every frame; plain pages keep the defaults', () => {
+    expect(shapeViewOptions('waveShell')).toEqual({ initialState: { colorMode: ColorMode.Waves }, animate: true });
+    expect(shapeViewOptions('plain')).toEqual({});
+  });
+});
+
+describe('isAnimated', () => {
+  it('only the height-wave colour mode needs continuous repaints', () => {
+    expect(isAnimated({ colorMode: ColorMode.Waves })).toBe(true);
+    for (const m of [ColorMode.Surface, ColorMode.Height, ColorMode.Usage, ColorMode.Year, ColorMode.Steps]) {
+      expect(isAnimated({ colorMode: m })).toBe(false);
+    }
   });
 });

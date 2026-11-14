@@ -6,7 +6,7 @@ import { type DeclaredBinding, createDeclaredBindGroup, createDeclaredLayout, de
 import { createBufferFromData, readBuffer } from '../gpu/buffers';
 import { createCheckedShaderModule } from '../gpu/shader';
 import { linkWgsl } from '../wgsl/link';
-import { rasterShader, sdfRenderShader, sdfTiledRenderShader } from '../wgsl/modules';
+import { rasterShader, sdfRenderShader, sdfTiledRenderShader, sdfTiledWaveShellRenderShader, sdfWaveShellRenderShader } from '../wgsl/modules';
 import { FRAME_BYTES } from './frame';
 import { type SceneResources, sceneBindings } from './scene';
 import { type TiledSceneResources, tiledSceneBindings } from './tiledScene';
@@ -77,15 +77,20 @@ export const createRasterRenderer = async (
   return { pipeline, bindGroup, vertexCount: mesh.triCount * 3, usesDepth: true };
 };
 
+/** 'plain': the baked buildings; 'waveShell': thin shells cut by the height waves in the SDF itself. */
+export type SdfShape = 'plain' | 'waveShell';
+
 export const createSdfRenderer = async (
   device: GPUDevice,
   format: GPUTextureFormat,
   frame: FrameResources,
   scene: SceneResources,
+  shape: SdfShape = 'plain',
 ): Promise<SurfaceRenderer> => {
   const bindings: DeclaredBinding[] = [...frameBindings(frame), ...sceneBindings(scene, 2)];
+  const shader = shape === 'waveShell' ? sdfWaveShellRenderShader : sdfRenderShader;
   const { pipeline, bindGroup } = await buildPipeline(
-    device, 'sdf', bindings, linkWgsl(sdfRenderShader), { vs: 'fullscreenVs', fs: 'sdfFs' }, format, false,
+    device, `sdf-${shape}`, bindings, linkWgsl(shader), { vs: 'fullscreenVs', fs: 'sdfFs' }, format, false,
   );
   return { pipeline, bindGroup, vertexCount: 3, usesDepth: false };
 };
@@ -96,10 +101,12 @@ export const createTiledSdfRenderer = async (
   format: GPUTextureFormat,
   frame: FrameResources,
   scene: TiledSceneResources,
+  shape: SdfShape = 'plain',
 ): Promise<SurfaceRenderer> => {
   const bindings: DeclaredBinding[] = [...frameBindings(frame), ...tiledSceneBindings(scene, 2)];
+  const shader = shape === 'waveShell' ? sdfTiledWaveShellRenderShader : sdfTiledRenderShader;
   const { pipeline, bindGroup } = await buildPipeline(
-    device, 'sdf-tiled', bindings, linkWgsl(sdfTiledRenderShader), { vs: 'fullscreenVs', fs: 'sdfFs' }, format, false,
+    device, `sdf-tiled-${shape}`, bindings, linkWgsl(shader), { vs: 'fullscreenVs', fs: 'sdfFs' }, format, false,
   );
   return { pipeline, bindGroup, vertexCount: 3, usesDepth: false };
 };

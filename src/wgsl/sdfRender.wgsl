@@ -19,8 +19,10 @@ struct MarchResult {
 
 fn gridMax() -> vec3f { return scene.gridOrigin + vec3f(scene.dims) * scene.brickWorld; }
 
-// Sphere tracing with empty-brick skipping.
-fn march(ro: vec3f, rd: vec3f, tStart: f32, tEnd: f32) -> MarchResult {
+// Sphere tracing with empty-brick skipping. side = 1 marches through open space to the next
+// entry surface; side = -1 marches through a building's interior to its exit surface (used when a
+// see-through hole lets the ray pass a surface).
+fn march(ro: vec3f, rd: vec3f, tStart: f32, tEnd: f32, side: f32) -> MarchResult {
   var t = tStart;
   var steps = 0u;
   loop {
@@ -33,7 +35,7 @@ fn march(ro: vec3f, rd: vec3f, tStart: f32, tEnd: f32) -> MarchResult {
       t += skip + 1e-3 * cell.voxel;
       continue;
     }
-    let d = sampleCellSdf(p, cell);
+    let d = side * shapeDistance(p, sampleCellSdf(p, cell));
     if (d < 0.02 * cell.voxel + t * 2e-5) {
       return MarchResult(t, steps, true, cell.slot);
     }
@@ -42,12 +44,20 @@ fn march(ro: vec3f, rd: vec3f, tStart: f32, tEnd: f32) -> MarchResult {
   return MarchResult(t, steps, false, 0u);
 }
 
+// Scene distance through the shape hook (sceneShape*.wgsl). Lower bounds stay lower bounds.
+fn shapedDistanceInfo(p: vec3f) -> vec2f {
+  let di = sceneDistanceInfo(p);
+  return vec2f(shapeDistance(p, di.x), di.y);
+}
+
+fn shapedDistance(p: vec3f) -> f32 { return shapedDistanceInfo(p).x; }
+
 fn sdfNormal(p: vec3f) -> vec3f {
   let h = 0.5 * locateCell(p).voxel;
   let k = vec2f(1.0, -1.0);
   return normalize(
-    k.xyy * sceneDistance(p + k.xyy * h) + k.yyx * sceneDistance(p + k.yyx * h) +
-    k.yxy * sceneDistance(p + k.yxy * h) + k.xxx * sceneDistance(p + k.xxx * h));
+    k.xyy * shapedDistance(p + k.xyy * h) + k.yyx * shapedDistance(p + k.yyx * h) +
+    k.yxy * shapedDistance(p + k.yxy * h) + k.xxx * shapedDistance(p + k.xxx * h));
 }
 
 // Soft shadow towards the sun (Quilez); 1 = fully lit.
@@ -59,13 +69,38 @@ fn softShadow(p: vec3f, l: vec3f) -> f32 {
   for (var i = 0; i < 96; i++) {
     let q = p + l * t;
     if (q.z > top) { break; }
-    let di = sceneDistanceInfo(q);
+    let di = shapedDistanceInfo(q);
     if (di.x < 0.01) { return 0.0; }
-    if (di.y > 0.5) { res = min(res, 8.0 * di.x / t); }
+    if (di.y > 0.5) { res = min(res, SHADOW_SHARPNESS * di.x / t); }
     t += clamp(di.x, 0.1, 30.0);
     if (t > 600.0) { break; }
   }
   return clamp(res, 0.0, 1.0);
+}
+
+// Height-wave shadow: sunlight passes the trough stripes (holes) just like the view ray, so the
+// shadow repeats the wave pattern. Hard-edged; 1 = lit. The march alternates between open space
+// and building interiors, starting on whichever side p is.
+fn waveShadow(p: vec3f, l: vec3f) -> f32 {
+  let span = rayBox(p, l, vec3f(scene.gridOrigin.xy, min(scene.gridOrigin.z, -0.01)), gridMax());
+  var side = select(-1.0, 1.0, sceneDistance(p) >= 0.0);
+  var t = max(span.x, 0.0);
+  for (var layer = 0; layer < 6; layer++) {
+    let m = march(p, l, t, span.y, side);
+    if (!m.hit) { return 1.0; }
+    let q = p + l * m.t;
+    if (heightWaveSolid(q, frame.viewport.z, 0.0)) { return 0.0; }
+    side = -side;
+    t = m.t + 0.1 * locateCell(q).voxel + m.t * 1e-4;
+  }
+  return 0.0;
+}
+
+// Sun visibility for the current colour mode.
+fn sunVisibility(p: vec3f, l: vec3f) -> f32 {
+  // with SHAPE_CUTS_HOLES the openings are in the distance field, so the soft shadow sees them
+  if (frame.colorMode == COLOR_MODE_WAVES && !SHAPE_CUTS_HOLES) { return waveShadow(p, l); }
+  return softShadow(p, l);
 }
 
 // Ambient occlusion from up to 5 samples along the normal (unbaked space counts as open).
@@ -74,7 +109,7 @@ fn ambientOcclusion(p: vec3f, n: vec3f) -> f32 {
   var w = 1.0;
   for (var i = 1; i <= 5; i++) {
     let h = f32(i) * 1.2;
-    let di = sceneDistanceInfo(p + n * h);
+    let di = shapedDistanceInfo(p + n * h);
     let d = select(h, min(di.x, h), di.y > 0.5);
     occ += (h - d) * w;
     w *= 0.6;
@@ -101,7 +136,22 @@ fn sdfFs(in: FsIn) -> SurfaceOut {
   let tEnd = min(span.y, tGround);
 
   var m = MarchResult(tEnd, 0u, false, 0u);
-  if (span.x <= span.y && tStart < tEnd) { m = march(ray.origin, ray.dir, tStart, tEnd); }
+  // metres per pixel at distance t = t * angle between neighbouring pixel rays
+  let pixelAngle = length(rayFromNdc(frame.invViewProj, ndc + vec2f(0.0, 2.0 / frame.viewport.y)).dir - ray.dir);
+  let waves = frame.colorMode == COLOR_MODE_WAVES;
+  if (span.x <= span.y && tStart < tEnd) {
+    m = march(ray.origin, ray.dir, tStart, tEnd, 1.0);
+    // height waves: trough stripes are holes, so pass the surface and march on to the next one
+    // (alternately a building's far wall from inside and the next building from outside)
+    var side = 1.0;
+    for (var layer = 0; layer < 6; layer++) {
+      if (!waves || SHAPE_CUTS_HOLES || !m.hit) { break; }
+      if (heightWaveSolid(ray.origin + ray.dir * m.t, frame.viewport.z, m.t * pixelAngle)) { break; }
+      side = -side;
+      let nudge = 0.1 * locateCell(ray.origin + ray.dir * m.t).voxel + m.t * 1e-4;
+      m = march(ray.origin, ray.dir, m.t + nudge, tEnd, side);
+    }
+  }
 
   if (frame.colorMode == 4u) {
     let a = select(0.0, 0.85, m.steps > 0u);
@@ -114,7 +164,7 @@ fn sdfFs(in: FsIn) -> SurfaceOut {
     let g = ray.origin + ray.dir * tGround;
     if (any(g.xy < gmin.xy) || any(g.xy > gmax.xy)) { return SurfaceOut(vec4f(0.0), 0u); }
     var vis = 1.0;
-    if (hasFlag(frame.flags, FLAG_SHADOWS)) { vis = softShadow(g + vec3f(0.0, 0.0, 0.05), frame.sunDir.xyz); }
+    if (hasFlag(frame.flags, FLAG_SHADOWS)) { vis = sunVisibility(g + vec3f(0.0, 0.0, 0.05), frame.sunDir.xyz); }
     var ao = 1.0;
     if (hasFlag(frame.flags, FLAG_AO)) { ao = ambientOcclusion(g, vec3f(0.0, 0.0, 1.0)); }
     let darkness = clamp((1.0 - vis) * 0.45 * frame.sunDir.w + (1.0 - ao) * 0.5, 0.0, 0.75);
@@ -124,7 +174,8 @@ fn sdfFs(in: FsIn) -> SurfaceOut {
   var p = ray.origin + ray.dir * m.t;
   var n = vec3f(0.0);
   var info = 0xffffffffu;
-  if (hasFlag(frame.flags, FLAG_REFINE)) {
+  // (the triangles know nothing of shaped openings)
+  if (hasFlag(frame.flags, FLAG_REFINE) && !SHAPE_CUTS_HOLES) {
     // optional: exact intersection with the triangles binned in this brick
     let back = 1.5 * scene.voxelSize;
     let h = intersectSlot(p - ray.dir * back, ray.dir, m.slot);
@@ -150,10 +201,14 @@ fn sdfFs(in: FsIn) -> SurfaceOut {
   if (frame.selected == building + 1u) { albedo = mix(albedo, vec3f(1.0, 0.85, 0.2), 0.6); }
   var vis = 1.0;
   if (hasFlag(frame.flags, FLAG_SHADOWS) && frame.sunDir.w > 0.0 && dot(n, frame.sunDir.xyz) > 0.0) {
-    vis = softShadow(p + n * (0.3 * scene.voxelSize), frame.sunDir.xyz);
+    vis = sunVisibility(p + n * (0.3 * scene.voxelSize), frame.sunDir.xyz);
   }
   var ao = 1.0;
   if (hasFlag(frame.flags, FLAG_AO)) { ao = ambientOcclusion(p + n * 0.05, n); }
-  let c = shadeSurface(albedo, n, frame.sunDir, vis, ao);
+  var c = shadeSurface(albedo, n, frame.sunDir, vis, ao);
+  if (waves) {
+    c = shadeSilver(n, -ray.dir, frame.sunDir, vis, ao);
+    if (frame.selected == building + 1u) { c = mix(c, vec3f(1.0, 0.85, 0.2), 0.6); }
+  }
   return SurfaceOut(vec4f(c, 1.0), building + 1u);
 }

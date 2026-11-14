@@ -9,7 +9,7 @@ import { maybeGunzip } from '../data/gzip';
 import { createLocalFrame } from '../geo/localFrame';
 import { requestBrowserDevice } from '../gpu/device';
 import { mapAttributions, plateauAttribution } from '../map/syncLayer';
-import { createFrameResources, createTiledSdfRenderer } from '../render/renderers';
+import { type SdfShape, createFrameResources, createTiledSdfRenderer } from '../render/renderers';
 import { TILE_NOT_RESIDENT, bakeTileInto, createTiledSceneResources, setTileEntry } from '../render/tiledScene';
 import { viewFootprint } from '../tiles/footprint';
 import type { PreparedTileData } from '../tiles/prepareTile';
@@ -18,6 +18,7 @@ import { createStreamer } from '../tiles/streamer';
 import { areaGrid, tileGridSpec } from '../tiles/tileGrid';
 import type { TileWorkerRequest, TileWorkerResponse } from '../tiles/tileWorker';
 import { setStatus } from './controls';
+import { shapeViewOptions } from './viewState';
 import { buildingPopupHtml } from './popup';
 import { createOverlay, startViewer } from './viewer';
 
@@ -52,7 +53,8 @@ const createWorkerPool = (size: number): WorkerPool => {
 
 const sameKeys = (a: readonly number[], b: readonly number[]) => a.length === b.length && a.every((k, i) => k === b[i]);
 
-export const startAreaApp = async (mapContainer: HTMLElement, slug: string): Promise<void> => {
+/** shape 'waveShell' (/waves/<slug>/): the height waves are cut into the distance field itself. */
+export const startAreaApp = async (mapContainer: HTMLElement, slug: string, shape: SdfShape = 'plain'): Promise<void> => {
   setStatus('WebGPU を初期化しています…');
   const device = await requestBrowserDevice();
   device.lost.then((info) => setStatus(`GPU デバイスが失われました: ${info.message}`));
@@ -68,7 +70,7 @@ export const startAreaApp = async (mapContainer: HTMLElement, slug: string): Pro
   const grid = areaGrid(manifest);
   const scene = createTiledSceneResources(device, grid);
   const frameRes = createFrameResources(device, new Float32Array(Math.max(1, manifest.buildingCount) * 4));
-  const renderer = await createTiledSdfRenderer(device, overlay.format, frameRes, scene);
+  const renderer = await createTiledSdfRenderer(device, overlay.format, frameRes, scene, shape);
   const tileByKey = new Map(manifest.tiles.map((t) => [t.iy * grid.tilesX + t.ix, t]));
   const workers = createWorkerPool(WORKERS);
 
@@ -147,6 +149,7 @@ export const startAreaApp = async (mapContainer: HTMLElement, slug: string): Pro
       showStats();
     },
     describeBuilding,
+    ...shapeViewOptions(shape),
   });
   repaint = viewer.repaint;
   showStats();

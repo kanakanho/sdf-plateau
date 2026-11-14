@@ -1,0 +1,30 @@
+---
+/** /waves/<slug>/: an area page with the height waves cut into the distance field. */
+import { readFileSync } from 'node:fs';
+import type { GetStaticPaths } from 'astro';
+import { WAVES_SLUG, parseAreaList, wavesAreaDescription } from '../../data/area';
+import Viewer from '../../layouts/Viewer.astro';
+
+export const getStaticPaths = (() => {
+  let json: string | null = null;
+  try {
+    json = readFileSync('public/data/areas.json', 'utf8');
+  } catch {
+    // no areas preprocessed yet
+  }
+  return parseAreaList(json).map((a) => ({ params: { slug: a.slug }, props: { name: a.name } }));
+}) satisfies GetStaticPaths;
+
+const { slug } = Astro.params;
+const { name } = Astro.props;
+---
+
+<Viewer
+  title={`SDF PLATEAU ${name}（波）`}
+  description={wavesAreaDescription(name)}
+  path={`/${WAVES_SLUG}/${slug}/`}
+  areaName={`${name}（LOD1・波を SDF に合成）`}
+  mode="area"
+  slug={slug}
+  waves
+/>
