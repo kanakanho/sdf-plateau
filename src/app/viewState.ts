@@ -1,6 +1,8 @@
 /** UI state and pure derivations used by the frame loop. */
 import { type SunPosition, sunDirectionENU, sunPosition } from '../geo/sun';
+import { WAVES_SLUG } from '../data/area';
 import { ColorMode, type ColorModeCode, RenderFlag } from '../render/frame';
+import type { SdfShape } from '../render/renderers';
 
 export type RenderMode = 'sdf' | 'raster';
 
@@ -115,5 +117,15 @@ export const nextDaylightMinute = (current: number, step: number, range: Dayligh
 export const clampToDaylight = (minutes: number, range: DaylightRange | null): number =>
   range ? Math.min(range.sunset, Math.max(range.sunrise, minutes)) : minutes;
 
-/** URL of the page for an area slug ('' = the Tokyo Station page). */
-export const areaPagePath = (slug: string): string => (slug ? `/${encodeURIComponent(slug)}/` : '/');
+/**
+ * URL of the page for an area slug ('' = the Tokyo Station page); waves = the variant with the
+ * height waves cut into the distance field, under /waves/.
+ */
+export const areaPagePath = (slug: string, waves = false): string => {
+  const prefix = waves ? `/${WAVES_SLUG}/` : '/';
+  return slug ? `${prefix}${encodeURIComponent(slug)}/` : prefix;
+};
+
+/** Viewer options of a page for its SDF shape: wave shells start in the wave colours and keep moving. */
+export const shapeViewOptions = (shape: SdfShape): { initialState?: Partial<ViewState>; animate?: boolean } =>
+  shape === 'waveShell' ? { initialState: { colorMode: ColorMode.Waves }, animate: true } : {};

@@ -163,6 +163,8 @@ describe('tiled vs single-grid rendering', () => {
   let frame: FrameResources;
   let tiled: SurfaceRenderer;
   let single: SurfaceRenderer;
+  let tiledWaves: SurfaceRenderer;
+  let singleWaves: SurfaceRenderer;
 
   beforeAll(async () => {
     const device = await getTestDevice();
@@ -174,6 +176,8 @@ describe('tiled vs single-grid rendering', () => {
     frame = createFrameResources(device, new Float32Array(4));
     tiled = await createTiledSdfRenderer(device, 'rgba8unorm', frame, scene);
     single = await createSdfRenderer(device, 'rgba8unorm', frame, ref);
+    tiledWaves = await createTiledSdfRenderer(device, 'rgba8unorm', frame, scene, 'waveShell');
+    singleWaves = await createSdfRenderer(device, 'rgba8unorm', frame, ref, 'waveShell');
   });
 
   const render = async (renderer: SurfaceRenderer, eye: [number, number, number]) => {
@@ -196,6 +200,16 @@ describe('tiled vs single-grid rendering', () => {
       const d = compareIdImages(await render(single, eye), await render(tiled, eye));
       expect(d.coverageA).toBeGreaterThan(0.02);
       expect(d.mismatchFraction).toBeLessThan(0.01);
+    });
+  }
+
+  for (const eye of [[40, -30, 25], [16, -4, 60]] as [number, number, number][]) {
+    it(`wave shells (/waves/<slug>/): tiled matches single-grid and cuts openings, from ${eye.join(',')}`, async () => {
+      const waves = await render(tiledWaves, eye);
+      const d = compareIdImages(await render(singleWaves, eye), waves);
+      expect(d.coverageA).toBeGreaterThan(0.02);
+      expect(d.mismatchFraction).toBeLessThan(0.01);
+      expect(compareIdImages(await render(tiled, eye), waves).mismatchFraction).toBeGreaterThan(0.001);
     });
   }
 });

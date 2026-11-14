@@ -12,11 +12,11 @@ import { createLocalFrame, localToLngLat } from '../geo/localFrame';
 import { requestBrowserDevice } from '../gpu/device';
 import { createBufferFromData } from '../gpu/buffers';
 import { mapAttributions } from '../map/syncLayer';
-import { ColorMode, buildingAttributeArray, buildingTopHeights } from '../render/frame';
+import { buildingAttributeArray, buildingTopHeights } from '../render/frame';
 import { type SdfShape, type SurfaceRenderer, createFrameResources, createRasterRenderer, createSdfRenderer } from '../render/renderers';
 import { createSceneResources } from '../render/scene';
 import { buildingPopupHtml } from './popup';
-import { parseRefineFactor } from './viewState';
+import { parseRefineFactor, shapeViewOptions } from './viewState';
 import { setStatus } from './controls';
 import { createOverlay, startViewer } from './viewer';
 
@@ -66,7 +66,7 @@ export const startApp = async (mapContainer: HTMLElement, shape: SdfShape = 'pla
     renderer: (state) => (state.mode === 'sdf' && sdf ? sdf : raster),
     label: (r) => (r === sdf ? 'SDF' : 'ラスタ'),
     describeBuilding: async (id) => buildingPopupHtml(city.meta.buildings[id - 1]),
-    ...(shape === 'waveShell' ? { initialState: { colorMode: ColorMode.Waves }, animate: true } : {}),
+    ...shapeViewOptions(shape),
   });
 
   // ---- bake (CPU binning in a worker, then GPU) ----

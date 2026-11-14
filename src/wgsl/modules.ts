@@ -54,3 +54,4 @@ export const rasterShader = defineModule('rasterShader', rasterSrc, [frame, shad
 export const sdfRenderShader = defineModule('sdfRenderShader', sdfRenderSrc, [frame, shading, sceneShape, sdfScene, rayBox, rayFromNdc]);
 export const sdfWaveShellRenderShader = defineModule('sdfWaveShellRenderShader', sdfRenderSrc, [frame, shading, sceneShapeWaves, sdfScene, rayBox, rayFromNdc]);
 export const sdfTiledRenderShader = defineModule('sdfTiledRenderShader', sdfRenderSrc, [frame, shading, sceneShape, sdfTiledScene, rayBox, rayFromNdc]);
+export const sdfTiledWaveShellRenderShader = defineModule('sdfTiledWaveShellRenderShader', sdfRenderSrc, [frame, shading, sceneShapeWaves, sdfTiledScene, rayBox, rayFromNdc]);

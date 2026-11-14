@@ -79,7 +79,7 @@ const waveLength = (z: number) => WAVE_BASE + WAVE_GROWTH * Math.max(z, 0);
 /** height where heightWavePhase = 0.5 (half a cycle above the ground) */
 /** mirrors HEIGHT_WAVE_DUTY_* and heightWaveDuty: solid share of a cycle, low at the ground to high at top */
 const DUTY_LOW = 0.8;
-const DUTY_HIGH = 0.45;
+const DUTY_HIGH = 0.35;
 const DUTY_TOP = 150;
 const waveDuty = (z: number) => DUTY_LOW + (DUTY_HIGH - DUTY_LOW) * Math.min(Math.max(z / DUTY_TOP, 0), 1);
 /** cycles from the nearest crest at the origin at t = 0 (no sway, no drift), growth 0 */

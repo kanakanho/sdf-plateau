@@ -113,8 +113,13 @@ export const bindControls = (
   };
 };
 
-/** The area selector navigates to the chosen area's page (each page is a separate document). */
-export const bindAreaSelect = (): void => {
+/**
+ * The area selector and the wave toggle navigate to the chosen page (each page is a separate
+ * document): the same area with or without the height waves cut into the distance field.
+ */
+export const bindAreaSelect = (slug: string, waves: boolean): void => {
   const select = document.getElementById('area') as HTMLSelectElement | null;
-  if (select) select.onchange = () => location.assign(areaPagePath(select.value));
+  if (select) select.onchange = () => location.assign(areaPagePath(select.value, waves));
+  const toggle = document.getElementById('waves-page') as HTMLInputElement | null;
+  if (toggle) toggle.onchange = () => location.assign(areaPagePath(slug, toggle.checked));
 };

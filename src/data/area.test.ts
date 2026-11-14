@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type AreaTile, WAVES_SLUG, areaDescription, homeTileIndex, parseAreaList, tilePath, upsertAreaSummary } from './area';
+import { type AreaTile, WAVES_SLUG, areaDescription, homeTileIndex, parseAreaList, tilePath, upsertAreaSummary, wavesAreaDescription } from './area';
 
 describe('tilePath', () => {
   it('names tile files by grid position', () => {
@@ -44,6 +44,14 @@ describe('parseAreaList', () => {
   });
   it('drops an area that would collide with the reserved /waves/ page', () => {
     expect(parseAreaList(`[{"slug":"${WAVES_SLUG}","name":"x"},{"slug":"nagoya","name":"名古屋市"}]`)).toEqual([{ slug: 'nagoya', name: '名古屋市' }]);
+  });
+});
+
+describe('wavesAreaDescription', () => {
+  it('names the area, LOD1 and the distance-field waves', () => {
+    const d = wavesAreaDescription('名古屋市');
+    expect(d).toContain('名古屋市・LOD1');
+    expect(d).toContain('距離関数');
   });
 });
 

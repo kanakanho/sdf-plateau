@@ -64,6 +64,10 @@ export const parseAreaList = (json: string | null): AreaSummary[] => {
   );
 };
 
+/** Page description of an area's /waves/ page. */
+export const wavesAreaDescription = (name: string): string =>
+  `PLATEAU の 3D 都市モデル（${name}・LOD1）を薄いシルバーの殻にし、高さ方向に揺れる波の縞を SDF の距離関数そのものに合成してレイマーチで描画する実験ページ。`;
+
 /** Page description of an area page. */
 export const areaDescription = (name: string): string =>
   `PLATEAU の 3D 都市モデル（${name}・LOD1）を表示範囲のタイルごとに WebGPU 上で SDF に焼き込み、レイマーチで描画して MapLibre の地図に重ねる Web アプリケーション。`;

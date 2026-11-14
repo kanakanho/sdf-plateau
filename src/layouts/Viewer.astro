@@ -5,7 +5,7 @@
  */
 import { readFileSync } from 'node:fs';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { WAVES_SLUG, parseAreaList } from '../data/area';
+import { parseAreaList } from '../data/area';
 import '../style.css';
 
 export type Props = {
@@ -16,15 +16,14 @@ export type Props = {
   path: string;
   /** subtitle next to the heading */
   areaName: string;
-  /**
-   * 'station': Tokyo Station LOD2 (single bake); 'waves': the same scene with the height waves
-   * cut into the distance field; 'area': streamed LOD1 tiles of `slug`
-   */
-  mode: 'station' | 'waves' | 'area';
+  /** 'station': Tokyo Station LOD2 (single bake); 'area': streamed LOD1 tiles of `slug` */
+  mode: 'station' | 'area';
+  /** the /waves/ variant: height waves cut into the distance field */
+  waves?: boolean;
   slug?: string;
 };
 
-const { title, description, path, areaName, mode, slug = '' } = Astro.props;
+const { title, description, path, areaName, mode, slug = '', waves = false } = Astro.props;
 const readAreaList = () => {
   try {
     return readFileSync('public/data/areas.json', 'utf8');
@@ -53,7 +52,7 @@ const ogImage = new URL('/ogp.jpg', Astro.site).href;
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
   </head>
-  <body data-mode={mode} data-slug={slug}>
+  <body data-mode={mode} data-slug={slug} data-waves={String(waves)}>
     <div id="map"></div>
     <button id="panel-show" type="button" title="パネルを表示" aria-label="パネルを表示">☰</button>
     <aside id="panel">
@@ -65,12 +64,12 @@ const ogImage = new URL('/ogp.jpg', Astro.site).href;
         <label>地域
           <select id="area">
             <option value="" selected={mode === 'station'}>東京駅周辺（LOD2）</option>
-            <option value={WAVES_SLUG} selected={mode === 'waves'}>東京駅周辺（波を SDF に合成）</option>
             {areas.map((a) => <option value={a.slug} selected={a.slug === slug}>{a.name}（LOD1）</option>)}
           </select>
         </label>
       )}
-      {mode !== 'area' && (
+      <label class="check"><input id="waves-page" type="checkbox" checked={waves} /> 波を SDF に合成（実験）</label>
+      {mode === 'station' && (
         <label>描画
           <select id="mode">
             <option value="sdf">SDF レイマーチ</option>
@@ -95,7 +94,7 @@ const ogImage = new URL('/ogp.jpg', Astro.site).href;
         <label class="check"><input id="shadows" type="checkbox" /> 影（ソフトシャドウ）</label>
         <label class="check"><input id="groundShadows" type="checkbox" /> 地面の影</label>
         <label class="check"><input id="ao" type="checkbox" /> アンビエントオクルージョン</label>
-        {mode === 'station' && <label class="check"><input id="refine" type="checkbox" /> 交点を三角形で補正</label>}
+        {mode === 'station' && !waves && <label class="check"><input id="refine" type="checkbox" /> 交点を三角形で補正</label>}
         <label class="check"><input id="picking" type="checkbox" /> クリックで建物を選択</label>
       </fieldset>
       <label class="row">解像度 <input id="scale" type="range" min="0.25" max="1" step="0.05" /> <span id="scale-label"></span></label>

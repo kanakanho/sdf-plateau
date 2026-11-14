@@ -6,7 +6,7 @@ import { type DeclaredBinding, createDeclaredBindGroup, createDeclaredLayout, de
 import { createBufferFromData, readBuffer } from '../gpu/buffers';
 import { createCheckedShaderModule } from '../gpu/shader';
 import { linkWgsl } from '../wgsl/link';
-import { rasterShader, sdfRenderShader, sdfTiledRenderShader, sdfWaveShellRenderShader } from '../wgsl/modules';
+import { rasterShader, sdfRenderShader, sdfTiledRenderShader, sdfTiledWaveShellRenderShader, sdfWaveShellRenderShader } from '../wgsl/modules';
 import { FRAME_BYTES } from './frame';
 import { type SceneResources, sceneBindings } from './scene';
 import { type TiledSceneResources, tiledSceneBindings } from './tiledScene';
@@ -101,10 +101,12 @@ export const createTiledSdfRenderer = async (
   format: GPUTextureFormat,
   frame: FrameResources,
   scene: TiledSceneResources,
+  shape: SdfShape = 'plain',
 ): Promise<SurfaceRenderer> => {
   const bindings: DeclaredBinding[] = [...frameBindings(frame), ...tiledSceneBindings(scene, 2)];
+  const shader = shape === 'waveShell' ? sdfTiledWaveShellRenderShader : sdfTiledRenderShader;
   const { pipeline, bindGroup } = await buildPipeline(
-    device, 'sdf-tiled', bindings, linkWgsl(sdfTiledRenderShader), { vs: 'fullscreenVs', fs: 'sdfFs' }, format, false,
+    device, `sdf-tiled-${shape}`, bindings, linkWgsl(shader), { vs: 'fullscreenVs', fs: 'sdfFs' }, format, false,
   );
   return { pipeline, bindGroup, vertexCount: 3, usesDepth: false };
 };
