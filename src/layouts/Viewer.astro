@@ -1,15 +1,38 @@
+---
+/**
+ * Viewer page shell: meta tags and the control panel. The WebGPU app is started by the
+ * bundled module script below.
+ */
+import 'maplibre-gl/dist/maplibre-gl.css';
+import '../style.css';
+
+export type Props = {
+  /** document title and og:title */
+  title: string;
+  description: string;
+  /** path of this page, e.g. '/' or '/nagoya/' */
+  path: string;
+  /** subtitle next to the heading */
+  areaName: string;
+};
+
+const { title, description, path, areaName } = Astro.props;
+const ogUrl = new URL(path, Astro.site).href;
+const ogImage = new URL('/ogp.jpg', Astro.site).href;
+---
+
 <!doctype html>
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SDF PLATEAU 東京駅</title>
-    <meta name="description" content="PLATEAU の 3D 都市モデル（LOD2）を WebGPU 上で SDF に焼き込み、レイマーチで描画して MapLibre の地図に重ねる Web アプリケーション。" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://sdf-plateau.kanakanho.workers.dev/" />
-    <meta property="og:title" content="SDF PLATEAU 東京駅" />
-    <meta property="og:description" content="PLATEAU の 3D 都市モデル（LOD2）を WebGPU 上で SDF に焼き込み、レイマーチで描画して MapLibre の地図に重ねる Web アプリケーション。" />
-    <meta property="og:image" content="https://sdf-plateau.kanakanho.workers.dev/ogp.jpg" />
+    <meta property="og:url" content={ogUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -19,7 +42,7 @@
     <button id="panel-show" type="button" title="パネルを表示" aria-label="パネルを表示">☰</button>
     <aside id="panel">
       <header>
-        <h1>SDF PLATEAU <small>東京駅周辺</small></h1>
+        <h1>SDF PLATEAU <small>{areaName}</small></h1>
         <button id="panel-hide" type="button" title="パネルを隠す" aria-label="パネルを隠す">×</button>
       </header>
       <label>描画
@@ -59,6 +82,8 @@
       <p id="fps"></p>
       <p id="status"></p>
     </aside>
-    <script type="module" src="/src/main.ts"></script>
+    <script>
+      import '../main';
+    </script>
   </body>
 </html>

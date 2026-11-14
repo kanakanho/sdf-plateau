@@ -1,5 +1,5 @@
 {
-  // Cloudflare Workers (static assets only): serves the Vite build output in ./dist.
+  // Cloudflare Workers (static assets only): serves the Astro static build (one HTML per page) in ./dist.
   // Deployed by Workers Builds on every push to GitHub (build: `pnpm build`, deploy: `npx wrangler deploy`).
   // The Worker name in the Cloudflare dashboard must match "name" below.
   "$schema": "node_modules/wrangler/config-schema.json",
@@ -7,6 +7,6 @@
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "404-page"
   }
 }

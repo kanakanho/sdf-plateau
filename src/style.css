@@ -40,3 +40,5 @@ table.bldg { border-collapse: collapse; font-size: 12px; }
 table.bldg th { text-align: left; padding: 2px 8px 2px 0; color: #555; font-weight: 600; white-space: nowrap; vertical-align: top; }
 table.bldg td { padding: 2px 0; }
 @media (max-width: 600px) { #panel { width: auto; right: 12px; max-height: 45%; } }
+body.not-found { display: grid; place-items: center; background: var(--panel-bg); color: var(--panel-fg); }
+body.not-found a { color: inherit; }
