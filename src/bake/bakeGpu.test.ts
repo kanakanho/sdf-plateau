@@ -7,8 +7,17 @@ import { getTestDevice } from '../gpu/testDevice';
 import { type SceneResources, createSceneResources, sceneBindings } from '../render/scene';
 import { linkWgsl } from '../wgsl/link';
 import { sdfScene } from '../wgsl/modules';
-import { slotOrigin } from './atlasLayout';
-import { bakeAtlas, planBakeRuns } from './bakeGpu';
+import { type AtlasLayout, SAMPLES_PER_AXIS, slotOrigin } from './atlasLayout';
+import {
+  atlasLayoutOf,
+  bakeAtlas,
+  bakeIntoAtlas,
+  checkSlotRange,
+  createAtlasTexture,
+  getBakePipelines,
+  planBakeRuns,
+} from './bakeGpu';
+import { alignTo } from './params';
 import { SurfaceType, packTriInfo } from '../data/meshFormat';
 import { prepareBake } from './prepare';
 
@@ -26,13 +35,148 @@ const sdBoxCpu = (p: number[]) => {
 describe('planBakeRuns', () => {
   it('splits rows into runs and never crosses a layer', () => {
     const layout = { slotsX: 128, slotsY: 3, slotsZ: 2, size: [1152, 27, 18] as [number, number, number] };
-    const runs = planBakeRuns(128 * 5 + 10, layout, 2);
+    const runs = planBakeRuns(128 * 5 + 10, layout, 0, 2);
     expect(runs.map((r) => [r.slotStart, r.slotCount, r.origin[1], r.origin[2]])).toEqual([
       [0, 256, 0, 0],
       [256, 128, 18, 0],
       [384, 256, 0, 9],
       [640, 10, 18, 9],
     ]);
+  });
+
+  it('starts at the given atlas row and still never crosses a layer', () => {
+    const layout = { slotsX: 128, slotsY: 3, slotsZ: 3, size: [1152, 27, 27] as [number, number, number] };
+    // start in the last row of layer 0: first run is one row, then whole layers
+    const runs = planBakeRuns(128 * 4 + 1, layout, 2, 16);
+    expect(runs.map((r) => [r.slotStart, r.slotCount, r.slotRows, r.origin[1], r.origin[2]])).toEqual([
+      [0, 128, 1, 18, 0],
+      [128, 384, 3, 0, 9],
+      [512, 1, 1, 0, 18],
+    ]);
+  });
+
+  it('returns no runs for zero slots', () => {
+    const layout = { slotsX: 128, slotsY: 3, slotsZ: 1, size: [1152, 27, 9] as [number, number, number] };
+    expect(planBakeRuns(0, layout, 1)).toEqual([]);
+  });
+});
+
+describe('atlasLayoutOf', () => {
+  it('recovers slot counts from the texture size', () => {
+    expect(atlasLayoutOf({ width: 1152, height: 45, depthOrArrayLayers: 18 })).toEqual({
+      slotsX: 128,
+      slotsY: 5,
+      slotsZ: 2,
+      size: [1152, 45, 18],
+    });
+  });
+});
+
+describe('checkSlotRange', () => {
+  const layout = { slotsX: 128, slotsY: 2, slotsZ: 2, size: [1152, 18, 18] as [number, number, number] };
+  it('accepts row-aligned ranges that fit', () => {
+    expect(() => checkSlotRange(layout, 0, 512)).not.toThrow();
+    expect(() => checkSlotRange(layout, 384, 128)).not.toThrow();
+  });
+  it('rejects unaligned bases and overflowing ranges', () => {
+    expect(() => checkSlotRange(layout, 64, 1)).toThrow(/multiple/);
+    expect(() => checkSlotRange(layout, -128, 1)).toThrow(/multiple/);
+    expect(() => checkSlotRange(layout, 384, 129)).toThrow(/capacity/);
+  });
+});
+
+describe('getBakePipelines', () => {
+  it('creates the pipelines once per device', async () => {
+    const device = await getTestDevice();
+    const [a, b] = await Promise.all([getBakePipelines(device), getBakePipelines(device)]);
+    expect(a).toBe(b);
+    expect(await getBakePipelines(device)).toBe(a);
+  });
+});
+
+/** Reads a whole 8-bit 3D texture into a tightly indexed array (x + y * width + z * width * height). */
+const readAtlasBytes = async (device: GPUDevice, texture: GPUTexture): Promise<Uint8Array> => {
+  const [w, h, d] = [texture.width, texture.height, texture.depthOrArrayLayers];
+  const bytesPerRow = alignTo(w, 256);
+  const buf = device.createBuffer({ size: bytesPerRow * h * d, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC });
+  const enc = device.createCommandEncoder();
+  enc.copyTextureToBuffer({ texture }, { buffer: buf, bytesPerRow, rowsPerImage: h }, [w, h, d]);
+  device.queue.submit([enc.finish()]);
+  const padded = new Uint8Array(await readBuffer(device, buf, buf.size));
+  buf.destroy();
+  const out = new Uint8Array(w * h * d);
+  for (let row = 0; row < h * d; row++) out.set(padded.subarray(row * bytesPerRow, row * bytesPerRow + w), row * w);
+  return out;
+};
+
+const slotSamples = (bytes: Uint8Array, layout: AtlasLayout, slot: number): number[] => {
+  const o = slotOrigin(layout, slot);
+  const [w, h] = layout.size;
+  const out: number[] = [];
+  for (let z = 0; z < SAMPLES_PER_AXIS; z++)
+    for (let y = 0; y < SAMPLES_PER_AXIS; y++)
+      for (let x = 0; x < SAMPLES_PER_AXIS; x++) out.push(bytes[(o[2] + z) * w * h + (o[1] + y) * w + o[0] + x]);
+  return out;
+};
+
+describe('bakeIntoAtlas', () => {
+  const triInfo = Uint32Array.from({ length: 12 }, () => packTriInfo(5, SurfaceType.Wall));
+  const positions = boxTriangles(BOX_MIN, BOX_MAX);
+  // fine voxels give several slot rows
+  const prepared = prepareBake(positions, triInfo, [0, 0, 0], [30, 35, 20], 0.2, { refineFactor: 1 });
+  const input = {
+    positions,
+    bins: prepared.bins,
+    triPaletteIndex: prepared.palettes.triPaletteIndex,
+    slotDescs: prepared.slotDescs,
+    spec: prepared.spec,
+    layout: prepared.layout,
+  };
+  const slotCount = prepared.bins.slotBricks.length;
+  const rows = Math.ceil(slotCount / 128);
+  // two slot rows per layer; the second bake starts after a gap of at least one row, on the last
+  // (odd) row of a layer, so it crosses into the next layer
+  const startRow = rows + 1 + ((rows + 1) % 2 === 0 ? 1 : 0);
+  const slotBase = startRow * 128;
+  const target: AtlasLayout = (() => {
+    const slotsZ = Math.ceil((startRow + rows) / 2);
+    return { slotsX: 128, slotsY: 2, slotsZ, size: [128 * 9, 2 * 9, slotsZ * 9] };
+  })();
+
+  it('writes the same slots at a non-zero slotBase and leaves other rows untouched', async () => {
+    expect(rows).toBeGreaterThan(1);
+    const device = await getTestDevice();
+    const reference = await bakeAtlas(device, input);
+    const atlas = { distance: createAtlasTexture(device, target), id: createAtlasTexture(device, target, 'r8uint') };
+    // bake twice into the shared atlas: at row 0 and at startRow
+    await bakeIntoAtlas(device, atlas, input, 0);
+    const progress: number[] = [];
+    await bakeIntoAtlas(device, atlas, input, slotBase, (done) => progress.push(done));
+    expect(progress.at(-1)).toBe(slotCount);
+
+    for (const key of ['distance', 'id'] as const) {
+      const ref = await readAtlasBytes(device, reference[key]);
+      const got = await readAtlasBytes(device, atlas[key]);
+      for (let slot = 0; slot < slotCount; slot++) {
+        const expected = slotSamples(ref, prepared.layout, slot);
+        expect(slotSamples(got, target, slot)).toEqual(expected);
+        expect(slotSamples(got, target, slotBase + slot)).toEqual(expected);
+      }
+      // slot rows between the two bakes were never written (zero-initialised)
+      const emptyFill = key === 'distance' ? 255 : 0;
+      for (let slot = slotCount; slot < rows * 128; slot++) expect(new Set(slotSamples(got, target, slot))).toEqual(new Set([emptyFill]));
+      for (let slot = rows * 128; slot < slotBase; slot++) expect(new Set(slotSamples(got, target, slot))).toEqual(new Set([0]));
+    }
+    for (const t of [reference.distance, reference.id, atlas.distance, atlas.id]) t.destroy();
+  });
+
+  it('rejects a slotBase that is not row aligned or does not fit', async () => {
+    const device = await getTestDevice();
+    const atlas = { distance: createAtlasTexture(device, target), id: createAtlasTexture(device, target, 'r8uint') };
+    await expect(bakeIntoAtlas(device, atlas, input, 64)).rejects.toThrow(/multiple/);
+    await expect(bakeIntoAtlas(device, atlas, input, (target.slotsY * target.slotsZ - 1) * 128)).rejects.toThrow(/capacity/);
+    atlas.distance.destroy();
+    atlas.id.destroy();
   });
 });
 
