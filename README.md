@@ -13,13 +13,30 @@ PLATEAU の建築物モデル（LOD2、無い建物は LOD1）を、WebGPU 上�
 pnpm install
 # データを作り直す場合のみ: CityGML (EPSG:6697) を data/raw/ に置いてから
 pnpm preprocess         # -> public/data/city.bin.gz, city.json
-pnpm dev                # http://localhost:5173
+pnpm dev                # http://localhost:5173（Astro の開発サーバ）
+pnpm build              # dist/ に静的サイトを出力（ページごとに HTML を生成）
 pnpm test               # Vitest（WGSL の関数は Dawn = npm パッケージ `webgpu` で GPU 実行して検証）
 ```
 
 パッケージ管理には [pnpm](https://pnpm.io/) を使います（`package.json` の `packageManager` を参照。Corepack を有効にすると自動で揃います）。依存パッケージのインストールスクリプトは、`pnpm-workspace.yaml` の `allowBuilds` で許可した `esbuild` と `webgpu` だけが実行されます。
 
 WebGPU に対応したブラウザ（Chrome / Edge / Safari 26 以降）が必要です。
+
+## 地域ページ（LOD1 のタイル表示）
+
+`/chiyodaku/` や `/nagoya/` のような地域ページでは、市区町村全体の LOD1 建物を 1024 m 四方のタイルに分けて配信します。表示範囲のタイルだけを読み込んで焼き込み、見えなくなったタイルは GPU の容量が足りなくなった時点で古い順に破棄します。
+
+```bash
+# 1. G空間情報センターの PLATEAU 配布ページから CityGML を入手し、udx/bldg/*.gml を data/raw/<slug>/ に置く
+# 2. 地域を前処理する（地域の設定は scripts/preprocess/areas.ts）
+pnpm preprocess:area nagoya   # -> public/data/nagoya/area.json, tiles/*.bin.gz, tiles/*.json.gz, public/data/areas.json
+pnpm build                    # areas.json の地域ごとに /<slug>/ の HTML を生成
+```
+
+- LOD2 を持つ建物も LOD1 の立体（底面 + 高さ）で表示します。ファイルには底面の多角形と高さだけを入れ、ブラウザで立体にします
+- ボクセルは既定で 2 m です（`/` は 1 m）。交点の三角形補正とラスタ描画はありません
+- 地域を増やすときは `scripts/preprocess/areas.ts` に設定を追記して前処理を実行し、`public/data/ATTRIBUTION.md` に出典を追記します
+- 静的サイト（SSG）で、サーバ側の処理はありません
 
 ## 処理の流れ
 
@@ -47,7 +64,9 @@ WebGPU に対応したブラウザ（Chrome / Edge / Safari 26 以降）が必�
 | `src/wgsl` | 1 ファイル 1 関数群の WGSL と、小さなリンカ |
 | `src/render` | フレーム uniform、シーンリソース、ラスタ / SDF パイプライン |
 | `src/gpu` | バッファ、明示的な bind group layout、WGSL テストハーネス |
+| `src/tiles` | 地域ページのタイル処理（押し出し、表示範囲のタイル選択、プールの割り当て、読み込みの順番） |
 | `src/app` | 画面の状態（純粋関数）と DOM・地図の配線 |
+| `src/pages`, `src/layouts` | Astro のページ（静的に生成する HTML とパネル） |
 
 方針として、関数は小さく疎結合に保ち、ライブラリが要求する箇所（`new maplibregl.Map` など）以外ではクラスを使いません。
 
@@ -63,8 +82,12 @@ WebGPU に対応したブラウザ（Chrome / Edge / Safari 26 以降）が必�
 > <https://www.geospatial.jp/ckan/dataset/plateau-13101-chiyoda-ku-2025>
 > 上記データを加工して作成（三角形化、ローカル座標への変換、地盤高の補正、属性の抽出）
 
+> 出典：3D都市モデル（Project PLATEAU）建築物モデル（名古屋市）2022年度（国土交通省 / 著作権 名古屋市）
+> <https://www.geospatial.jp/ckan/dataset/plateau-23100-nagoya-shi-2022>
+> 上記データを加工して作成（LOD1 の底面と高さの抽出、ローカル座標への変換、タイル分割、属性の抽出）
+
 - 利用条件は [PLATEAU サイトポリシー](https://www.mlit.go.jp/plateau/site-policy/)（公共データ利用規約 第1.0版、CC BY 4.0 互換）に従います。
-- このリポジトリのデータは、国土交通省や千代田区が作成・公表したものではありません。
+- このリポジトリのデータは、国土交通省や千代田区・名古屋市が作成・公表したものではありません。
 - 元の CityGML（1 ファイル最大 250MB）は同梱していません。上記の配布ページから入手できます。
 - 背景地図は閲覧時に [地理院タイル](https://maps.gsi.go.jp/development/ichiran.html) を読み込んでおり、再配布はしていません。
 
