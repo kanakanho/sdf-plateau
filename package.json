@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "preprocess": "tsx scripts/preprocess/main.ts",
+    "preprocess:area": "tsx scripts/preprocess/mainArea.ts",
     "preview:cf": "pnpm build && wrangler dev"
   },
   "devDependencies": {
