@@ -10,10 +10,13 @@ import rayFromNdcSrc from './rayFromNdc.wgsl?raw';
 import rasterSrc from './raster.wgsl?raw';
 import rayTriangleSrc from './rayTriangle.wgsl?raw';
 import sceneTypesSrc from './sceneTypes.wgsl?raw';
+import sceneTrisSrc from './sceneTris.wgsl?raw';
 import sdBoxSrc from './sdBox.wgsl?raw';
 import sdfCodecSrc from './sdfCodec.wgsl?raw';
 import sdfRenderSrc from './sdfRender.wgsl?raw';
 import sdfSceneSrc from './sdfScene.wgsl?raw';
+import sdfSceneCommonSrc from './sdfSceneCommon.wgsl?raw';
+import sdfTiledSceneSrc from './sdfTiledScene.wgsl?raw';
 import shadingSrc from './shading.wgsl?raw';
 import { defineModule } from './link';
 
@@ -26,7 +29,12 @@ export const brickGrid = defineModule('brickGrid', brickGridSrc);
 export const palette = defineModule('palette', paletteSrc);
 export const sdfCodec = defineModule('sdfCodec', sdfCodecSrc);
 export const sceneTypes = defineModule('sceneTypes', sceneTypesSrc);
-export const sdfScene = defineModule('sdfScene', sdfSceneSrc, [sceneTypes, brickGrid, sdfCodec, rayTriangle]);
+export const sceneTris = defineModule('sceneTris', sceneTrisSrc);
+export const sdfSceneCommon = defineModule('sdfSceneCommon', sdfSceneCommonSrc, [sceneTypes, brickGrid, sdfCodec]);
+/** single baked grid (Tokyo Station LOD2) */
+export const sdfScene = defineModule('sdfScene', sdfSceneSrc, [sdfSceneCommon, sceneTris, rayTriangle]);
+/** streamed tiles (LOD1 areas) */
+export const sdfTiledScene = defineModule('sdfTiledScene', sdfTiledSceneSrc, [sdfSceneCommon]);
 
 /** Compute entry points (contain their own @binding declarations). */
 export const bakeKernel = defineModule('bakeKernel', bakeSrc, [closestPointTriangle]);
@@ -36,5 +44,6 @@ export const frame = defineModule('frame', frameSrc);
 export const shading = defineModule('shading', shadingSrc, [palette]);
 
 /** Render entry points (bindings are declared by the pipeline code). */
-export const rasterShader = defineModule('rasterShader', rasterSrc, [frame, shading, sceneTypes]);
+export const rasterShader = defineModule('rasterShader', rasterSrc, [frame, shading, sceneTris]);
 export const sdfRenderShader = defineModule('sdfRenderShader', sdfRenderSrc, [frame, shading, sdfScene, rayBox, rayFromNdc]);
+export const sdfTiledRenderShader = defineModule('sdfTiledRenderShader', sdfRenderSrc, [frame, shading, sdfTiledScene, rayBox, rayFromNdc]);

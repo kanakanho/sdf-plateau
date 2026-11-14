@@ -55,3 +55,32 @@ export const POLY_WITH_HOLE = poly(
   [[0, 0, 0], [0, 4, 0], [4, 4, 0], [4, 0, 0], [0, 0, 0]],
   [[[1, 1, 0], [3, 1, 0], [3, 3, 0], [1, 3, 0], [1, 1, 0]]],
 );
+
+// Building with a courtyard: LOD1 ground at 3.0 m T.P., LOD1 roof at 21.0 m, plus an LOD2 roof at
+// 30.0 m that the area tiles must ignore. The LOD1 ground face is written CW seen from above
+// (facing down) with a CCW hole, as LOD1 solids are in PLATEAU.
+const IN = 0.25; // courtyard inset as a fraction of the footprint
+const lerpCorner = (u: number, v: number, h: number) => [LAT0 + DLAT * v, LNG0 + DLNG * u, h];
+const square = (lo: number, hi: number, h: number) => [
+  lerpCorner(lo, lo, h),
+  lerpCorner(hi, lo, h),
+  lerpCorner(hi, hi, h),
+  lerpCorner(lo, hi, h),
+  lerpCorner(lo, lo, h),
+];
+const reversed = (pts: number[][]) => [...pts].reverse();
+export const COURTYARD_BUILDING = `<bldg:Building gml:id="bldg_test-3">
+<bldg:usage codeSpace="x">411</bldg:usage>
+<bldg:yearOfConstruction>2005</bldg:yearOfConstruction>
+<bldg:lod1Solid><gml:Solid><gml:exterior><gml:CompositeSurface>
+${poly(reversed(square(0, 1, 3)), [square(IN, 1 - IN, 3)])}${poly(square(0, 1, 21), [reversed(square(IN, 1 - IN, 21))])}${poly([
+  lerpCorner(0, 0, 3),
+  lerpCorner(1, 0, 3),
+  lerpCorner(1, 0, 21),
+  lerpCorner(0, 0, 21),
+  lerpCorner(0, 0, 3),
+])}
+</gml:CompositeSurface></gml:exterior></gml:Solid></bldg:lod1Solid>
+<bldg:lod2Solid><gml:Solid><gml:exterior><gml:CompositeSurface><gml:surfaceMember xlink:href="#p"/></gml:CompositeSurface></gml:exterior></gml:Solid></bldg:lod2Solid>
+${surface('RoofSurface', poly(square(0, 1, 30)))}
+</bldg:Building>`;

@@ -1,9 +1,8 @@
-import { defineConfig } from 'vitest/config';
-import { thirdPartyLicenses } from './scripts/licenses';
+/// <reference types="vitest/config" />
+// Vitest only: the app itself is built by Astro (astro.config.mjs).
+import { getViteConfig } from 'astro/config';
 
-export default defineConfig({
-  server: { port: 5173 },
-  plugins: [thirdPartyLicenses()],
+export default getViteConfig({
   test: {
     environment: 'node',
     pool: 'forks',

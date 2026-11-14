@@ -6,16 +6,19 @@
   "packageManager": "pnpm@12.18.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "dev": "astro dev",
+    "build": "tsc --noEmit && astro build",
+    "preview": "astro preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "preprocess": "tsx scripts/preprocess/main.ts",
+    "preprocess:area": "tsx scripts/preprocess/mainArea.ts",
     "preview:cf": "pnpm build && wrangler dev"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
     "@webgpu/types": "^0.1.74",
+    "astro": "7.4.4",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",

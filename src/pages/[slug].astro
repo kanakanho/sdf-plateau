@@ -1,0 +1,29 @@
+---
+/** One page per streamed area listed in public/data/areas.json (written by pnpm preprocess:area). */
+import { readFileSync } from 'node:fs';
+import type { GetStaticPaths } from 'astro';
+import { areaDescription, parseAreaList } from '../data/area';
+import Viewer from '../layouts/Viewer.astro';
+
+export const getStaticPaths = (() => {
+  let json: string | null = null;
+  try {
+    json = readFileSync('public/data/areas.json', 'utf8');
+  } catch {
+    // no areas preprocessed yet
+  }
+  return parseAreaList(json).map((a) => ({ params: { slug: a.slug }, props: { name: a.name } }));
+}) satisfies GetStaticPaths;
+
+const { slug } = Astro.params;
+const { name } = Astro.props;
+---
+
+<Viewer
+  title={`SDF PLATEAU ${name}`}
+  description={areaDescription(name)}
+  path={`/${slug}/`}
+  areaName={`${name}（LOD1）`}
+  mode="area"
+  slug={slug}
+/>

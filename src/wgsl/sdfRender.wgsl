@@ -131,7 +131,7 @@ fn sdfFs(in: FsIn) -> SurfaceOut {
     if (h.tri != 0xffffffffu && h.t < 3.0 * back) {
       p = p - ray.dir * back + ray.dir * h.t;
       n = triNormal(h.tri);
-      info = sceneTriInfo[h.tri];
+      info = triInfoOf(h.tri);
     }
   }
   var surfaceType = info & 7u;

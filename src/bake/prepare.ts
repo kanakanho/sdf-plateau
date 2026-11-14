@@ -32,10 +32,21 @@ export const prepareBake = (
   boundsMin: readonly number[],
   boundsMax: readonly number[],
   voxelSize: number,
+  options: RefineOptions = {},
+): PreparedBake =>
+  // the ground plane (z = 0) is the lower limit of interest
+  prepareBakeOnGrid(positions, triInfo, computeGridSpec([boundsMin[0], boundsMin[1], Math.min(boundsMin[2], 0)], boundsMax, { voxelSize }), options);
+
+/**
+ * Same as prepareBake on a given grid (e.g. one tile of a streamed area). Triangles may extend
+ * beyond the grid: they still shape the distances near its faces, but get no bricks outside it.
+ */
+export const prepareBakeOnGrid = (
+  positions: Float32Array,
+  triInfo: Uint32Array,
+  spec: GridSpec,
   { refineFactor = 2, maxSlots = 280_000, minScore = 16 }: RefineOptions = {},
 ): PreparedBake => {
-  // the ground plane (z = 0) is the lower limit of interest
-  const spec = computeGridSpec([boundsMin[0], boundsMin[1], Math.min(boundsMin[2], 0)], boundsMax, { voxelSize });
   const coarse = binTriangles(positions, spec);
   const plan = refineFactor > 1 ? planRefinement(positions, coarse, spec, refineFactor, maxSlots, minScore) : new Map();
   const adaptive = assembleAdaptive(spec, coarse, buildIndirection(spec, coarse.slotBricks), plan, refineFactor);

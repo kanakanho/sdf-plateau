@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RenderFlag } from '../render/frame';
-import { applyPatch, canvasSize, formatMinutes, initialViewState, jstDate, renderFlags, sunIntensity, sunLighting } from './viewState';
+import { applyPatch, areaPagePath, canvasSize, formatMinutes, initialViewState, jstDate, renderFlags, sunIntensity, sunLighting } from './viewState';
 
 describe('renderFlags', () => {
   it('combines toggles into bit flags', () => {
@@ -131,5 +131,12 @@ describe('clampToDaylight', () => {
   it('leaves the time alone without daylight', async () => {
     const { clampToDaylight } = await import('./viewState');
     expect(clampToDaylight(100, null)).toBe(100);
+  });
+});
+
+describe('areaPagePath', () => {
+  it('maps a slug to its page and empty to the station page', () => {
+    expect(areaPagePath('nagoya')).toBe('/nagoya/');
+    expect(areaPagePath('')).toBe('/');
   });
 });

@@ -111,3 +111,6 @@ export const nextDaylightMinute = (current: number, step: number, range: Dayligh
 /** Clamps a time of day into the daylight range (unchanged when there is no daylight). */
 export const clampToDaylight = (minutes: number, range: DaylightRange | null): number =>
   range ? Math.min(range.sunset, Math.max(range.sunrise, minutes)) : minutes;
+
+/** URL of the page for an area slug ('' = the Tokyo Station page). */
+export const areaPagePath = (slug: string): string => (slug ? `/${encodeURIComponent(slug)}/` : '/');

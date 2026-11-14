@@ -1,12 +1,15 @@
 {
-  // Cloudflare Workers (static assets only): serves the Vite build output in ./dist.
+  // Cloudflare Workers (static assets only): serves the Astro static build (one HTML per page) in ./dist.
   // Deployed by Workers Builds on every push to GitHub (build: `pnpm build`, deploy: `npx wrangler deploy`).
+  // Non-production branches (pull requests) are deployed with `npx wrangler preview`, which requires
+  // the `previews` block below; it stays empty because assets and compatibility settings are shared.
   // The Worker name in the Cloudflare dashboard must match "name" below.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "sdf-plateau",
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
-  }
+    "not_found_handling": "404-page"
+  },
+  "previews": {}
 }
