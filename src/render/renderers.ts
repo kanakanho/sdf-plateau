@@ -6,9 +6,10 @@ import { type DeclaredBinding, createDeclaredBindGroup, createDeclaredLayout, de
 import { createBufferFromData, readBuffer } from '../gpu/buffers';
 import { createCheckedShaderModule } from '../gpu/shader';
 import { linkWgsl } from '../wgsl/link';
-import { rasterShader, sdfRenderShader } from '../wgsl/modules';
+import { rasterShader, sdfRenderShader, sdfTiledRenderShader } from '../wgsl/modules';
 import { FRAME_BYTES } from './frame';
 import { type SceneResources, sceneBindings } from './scene';
+import { type TiledSceneResources, tiledSceneBindings } from './tiledScene';
 
 export const ID_FORMAT: GPUTextureFormat = 'r32uint';
 export const DEPTH_FORMAT: GPUTextureFormat = 'depth24plus';
@@ -17,7 +18,7 @@ export type FrameResources = { readonly frame: GPUBuffer; readonly attrs: GPUBuf
 
 export const createFrameResources = (device: GPUDevice, attrs: Float32Array): FrameResources => ({
   frame: device.createBuffer({ label: 'frame', size: FRAME_BYTES, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST }),
-  attrs: createBufferFromData(device, attrs, GPUBufferUsage.STORAGE, 'building-attrs'),
+  attrs: createBufferFromData(device, attrs, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST, 'building-attrs'),
 });
 
 const frameBindings = (f: FrameResources): DeclaredBinding[] => [
@@ -85,6 +86,20 @@ export const createSdfRenderer = async (
   const bindings: DeclaredBinding[] = [...frameBindings(frame), ...sceneBindings(scene, 2)];
   const { pipeline, bindGroup } = await buildPipeline(
     device, 'sdf', bindings, linkWgsl(sdfRenderShader), { vs: 'fullscreenVs', fs: 'sdfFs' }, format, false,
+  );
+  return { pipeline, bindGroup, vertexCount: 3, usesDepth: false };
+};
+
+/** SDF ray marcher over a streamed (tiled) area. */
+export const createTiledSdfRenderer = async (
+  device: GPUDevice,
+  format: GPUTextureFormat,
+  frame: FrameResources,
+  scene: TiledSceneResources,
+): Promise<SurfaceRenderer> => {
+  const bindings: DeclaredBinding[] = [...frameBindings(frame), ...tiledSceneBindings(scene, 2)];
+  const { pipeline, bindGroup } = await buildPipeline(
+    device, 'sdf-tiled', bindings, linkWgsl(sdfTiledRenderShader), { vs: 'fullscreenVs', fs: 'sdfFs' }, format, false,
   );
   return { pipeline, bindGroup, vertexCount: 3, usesDepth: false };
 };

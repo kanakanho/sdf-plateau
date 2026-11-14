@@ -11,8 +11,3 @@ struct SceneParams {
   refineFactor: u32,  // children per axis of refined bricks
   slotCount: u32,
 };
-
-fn sceneTri(i: u32, k: u32) -> vec3f {
-  let o = i * 9u + k * 3u;
-  return vec3f(sceneTris[o], sceneTris[o + 1u], sceneTris[o + 2u]);
-}
