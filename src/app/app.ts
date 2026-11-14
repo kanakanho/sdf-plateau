@@ -12,8 +12,8 @@ import { createLocalFrame, localToLngLat } from '../geo/localFrame';
 import { requestBrowserDevice } from '../gpu/device';
 import { createBufferFromData } from '../gpu/buffers';
 import { mapAttributions } from '../map/syncLayer';
-import { buildingAttributeArray, buildingTopHeights } from '../render/frame';
-import { type SurfaceRenderer, createFrameResources, createRasterRenderer, createSdfRenderer } from '../render/renderers';
+import { ColorMode, buildingAttributeArray, buildingTopHeights } from '../render/frame';
+import { type SdfShape, type SurfaceRenderer, createFrameResources, createRasterRenderer, createSdfRenderer } from '../render/renderers';
 import { createSceneResources } from '../render/scene';
 import { buildingPopupHtml } from './popup';
 import { parseRefineFactor } from './viewState';
@@ -38,7 +38,8 @@ const runBakeWorker = (req: BakeWorkerRequest): Promise<PreparedBake> =>
     worker.postMessage(req);
   });
 
-export const startApp = async (mapContainer: HTMLElement): Promise<void> => {
+/** shape 'waveShell' (/waves/ page): the height waves are cut into the distance field itself. */
+export const startApp = async (mapContainer: HTMLElement, shape: SdfShape = 'plain'): Promise<void> => {
   setStatus('WebGPU を初期化しています…');
   const device = await requestBrowserDevice();
   device.lost.then((info) => setStatus(`GPU デバイスが失われました: ${info.message}`));
@@ -65,6 +66,7 @@ export const startApp = async (mapContainer: HTMLElement): Promise<void> => {
     renderer: (state) => (state.mode === 'sdf' && sdf ? sdf : raster),
     label: (r) => (r === sdf ? 'SDF' : 'ラスタ'),
     describeBuilding: async (id) => buildingPopupHtml(city.meta.buildings[id - 1]),
+    ...(shape === 'waveShell' ? { initialState: { colorMode: ColorMode.Waves }, animate: true } : {}),
   });
 
   // ---- bake (CPU binning in a worker, then GPU) ----
@@ -107,7 +109,7 @@ export const startApp = async (mapContainer: HTMLElement): Promise<void> => {
     brickTable: prepared.brickTable,
     refineFactor: prepared.refineFactor,
   });
-  sdf = await createSdfRenderer(device, overlay.format, frameRes, scene);
+  sdf = await createSdfRenderer(device, overlay.format, frameRes, scene, shape);
   const refineLabel = prepared.refinedBricks > 0
     ? `うち ${prepared.refinedBricks.toLocaleString()} 個を ${VOXEL_SIZE / prepared.refineFactor}m に細分化, `
     : '';

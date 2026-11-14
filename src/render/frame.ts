@@ -3,7 +3,7 @@ import type { BuildingAttributes } from '../data/buildings';
 import { usageCategory } from '../data/buildings';
 import { type Mat4, fromValues, multiply } from '../geo/mat4';
 
-export const ColorMode = { Surface: 0, Height: 1, Usage: 2, Year: 3, Steps: 4 } as const;
+export const ColorMode = { Surface: 0, Height: 1, Usage: 2, Year: 3, Steps: 4, Waves: 5 } as const;
 export type ColorModeCode = (typeof ColorMode)[keyof typeof ColorMode];
 
 export const RenderFlag = { Shadows: 1, Ao: 2, Refine: 4, Ground: 8 } as const;

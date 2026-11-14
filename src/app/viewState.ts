@@ -1,6 +1,6 @@
 /** UI state and pure derivations used by the frame loop. */
 import { type SunPosition, sunDirectionENU, sunPosition } from '../geo/sun';
-import { type ColorModeCode, RenderFlag } from '../render/frame';
+import { ColorMode, type ColorModeCode, RenderFlag } from '../render/frame';
 
 export type RenderMode = 'sdf' | 'raster';
 
@@ -49,6 +49,9 @@ export const renderFlags = (s: Pick<ViewState, 'shadows' | 'ao' | 'refine' | 'gr
   (s.ao ? RenderFlag.Ao : 0) |
   (s.refine ? RenderFlag.Refine : 0) |
   (s.groundShadows ? RenderFlag.Ground : 0);
+
+/** Animated colour modes need a repaint every frame, not only on camera / UI changes. */
+export const isAnimated = (s: Pick<ViewState, 'colorMode'>): boolean => s.colorMode === ColorMode.Waves;
 
 /** Local JST date/time -> Date (UTC instant). */
 export const jstDate = (date: string, minutes: number): Date => {

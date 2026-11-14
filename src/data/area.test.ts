@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type AreaTile, areaDescription, homeTileIndex, parseAreaList, tilePath, upsertAreaSummary } from './area';
+import { type AreaTile, WAVES_SLUG, areaDescription, homeTileIndex, parseAreaList, tilePath, upsertAreaSummary } from './area';
 
 describe('tilePath', () => {
   it('names tile files by grid position', () => {
@@ -41,6 +41,9 @@ describe('parseAreaList', () => {
     expect(parseAreaList(null)).toEqual([]);
     expect(parseAreaList('{}')).toEqual([]);
     expect(parseAreaList('[{"slug":"nagoya","name":"名古屋市"},{"slug":1},null]')).toEqual([{ slug: 'nagoya', name: '名古屋市' }]);
+  });
+  it('drops an area that would collide with the reserved /waves/ page', () => {
+    expect(parseAreaList(`[{"slug":"${WAVES_SLUG}","name":"x"},{"slug":"nagoya","name":"名古屋市"}]`)).toEqual([{ slug: 'nagoya', name: '名古屋市' }]);
   });
 });
 

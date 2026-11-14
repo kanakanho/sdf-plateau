@@ -50,13 +50,17 @@ export const homeTileIndex = (tiles: readonly AreaTile[], building: number): num
 export const upsertAreaSummary = (list: readonly AreaSummary[], entry: AreaSummary): AreaSummary[] =>
   [...list.filter((a) => a.slug !== entry.slug), entry].sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
 
+/** Slug of the height-wave page (/waves/); reserved, so no area page can take it. */
+export const WAVES_SLUG = 'waves';
+
 /** Reads the area list (contents of public/data/areas.json); invalid or missing input gives []. */
 export const parseAreaList = (json: string | null): AreaSummary[] => {
   if (!json) return [];
   const v: unknown = JSON.parse(json);
   if (!Array.isArray(v)) return [];
   return v.filter(
-    (a): a is AreaSummary => typeof a === 'object' && a !== null && typeof a.slug === 'string' && typeof a.name === 'string',
+    (a): a is AreaSummary =>
+      typeof a === 'object' && a !== null && typeof a.slug === 'string' && typeof a.name === 'string' && a.slug !== WAVES_SLUG,
   );
 };
 

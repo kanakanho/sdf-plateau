@@ -18,7 +18,7 @@ import {
   readIdAt,
 } from '../render/renderers';
 import { bindControls, bindPanelToggle } from './controls';
-import { type ViewState, applyPatch, canvasSize, initialViewState, renderFlags, sunLighting } from './viewState';
+import { type ViewState, applyPatch, canvasSize, initialViewState, isAnimated, renderFlags, sunLighting } from './viewState';
 
 const MAX_STEPS = 256;
 
@@ -68,6 +68,10 @@ export type ViewerOptions = {
   readonly label: (renderer: SurfaceRenderer) => string;
   /** called every frame with the inverse local -> GL clip matrix (e.g. to pick tiles) */
   readonly onView?: (invLocalToClip: Mat4) => void;
+  /** overrides of the initial UI state (e.g. the colour mode of a page) */
+  readonly initialState?: Partial<ViewState>;
+  /** repaint every frame regardless of the colour mode (the scene itself moves) */
+  readonly animate?: boolean;
   /** popup HTML for a picked building (index + 1), or null */
   readonly describeBuilding: (id: number) => Promise<string | null>;
 };
@@ -78,7 +82,7 @@ export const startViewer = (container: HTMLElement, o: ViewerOptions): Viewer =>
   const { device, overlay, frame, frameRes } = o;
   const map = createMap(container, frame, o.view ?? DEFAULT_VIEW, o.attributions);
 
-  let state: ViewState = { ...initialViewState };
+  let state: ViewState = { ...initialViewState, ...o.initialState };
   let targets: RenderTargets | null = null;
   let lastMatrix: Float64Array | null = null;
   let frames = 0;
@@ -123,6 +127,7 @@ export const startViewer = (container: HTMLElement, o: ViewerOptions): Viewer =>
     const encoder = device.createCommandEncoder();
     encodeSurfacePass(encoder, renderer, overlay.context.getCurrentTexture().createView(), t);
     device.queue.submit([encoder.finish()]);
+    if (o.animate || isAnimated(state)) map.triggerRepaint();
     frames++;
     const now = performance.now();
     if (now - fpsT0 > 1000) {

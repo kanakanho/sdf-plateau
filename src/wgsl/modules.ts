@@ -17,6 +17,8 @@ import sdfRenderSrc from './sdfRender.wgsl?raw';
 import sdfSceneSrc from './sdfScene.wgsl?raw';
 import sdfSceneCommonSrc from './sdfSceneCommon.wgsl?raw';
 import sdfTiledSceneSrc from './sdfTiledScene.wgsl?raw';
+import sceneShapeSrc from './sceneShape.wgsl?raw';
+import sceneShapeWavesSrc from './sceneShapeWaves.wgsl?raw';
 import shadingSrc from './shading.wgsl?raw';
 import { defineModule } from './link';
 
@@ -43,7 +45,12 @@ export const packKernel = defineModule('packKernel', packSrc, [sdfCodec]);
 export const frame = defineModule('frame', frameSrc);
 export const shading = defineModule('shading', shadingSrc, [palette]);
 
+/** Scene shape hooks read by the SDF renderer: plain buildings, or wave-cut shells (/waves/). */
+export const sceneShape = defineModule('sceneShape', sceneShapeSrc);
+export const sceneShapeWaves = defineModule('sceneShapeWaves', sceneShapeWavesSrc, [frame, shading]);
+
 /** Render entry points (bindings are declared by the pipeline code). */
-export const rasterShader = defineModule('rasterShader', rasterSrc, [frame, shading, sceneTris]);
-export const sdfRenderShader = defineModule('sdfRenderShader', sdfRenderSrc, [frame, shading, sdfScene, rayBox, rayFromNdc]);
-export const sdfTiledRenderShader = defineModule('sdfTiledRenderShader', sdfRenderSrc, [frame, shading, sdfTiledScene, rayBox, rayFromNdc]);
+export const rasterShader = defineModule('rasterShader', rasterSrc, [frame, shading, sceneTris, rayFromNdc]);
+export const sdfRenderShader = defineModule('sdfRenderShader', sdfRenderSrc, [frame, shading, sceneShape, sdfScene, rayBox, rayFromNdc]);
+export const sdfWaveShellRenderShader = defineModule('sdfWaveShellRenderShader', sdfRenderSrc, [frame, shading, sceneShapeWaves, sdfScene, rayBox, rayFromNdc]);
+export const sdfTiledRenderShader = defineModule('sdfTiledRenderShader', sdfRenderSrc, [frame, shading, sceneShape, sdfTiledScene, rayBox, rayFromNdc]);

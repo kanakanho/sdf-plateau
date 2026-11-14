@@ -1,0 +1,12 @@
+---
+import { WAVES_SLUG } from '../data/area';
+import Viewer from '../layouts/Viewer.astro';
+---
+
+<Viewer
+  title="SDF PLATEAU 東京駅（波）"
+  description="東京駅周辺の PLATEAU LOD2 モデルを薄いシルバーの殻にし、高さ方向に揺れる波の縞を SDF の距離関数そのものに合成してレイマーチで描画する実験ページ。"
+  path={`/${WAVES_SLUG}/`}
+  areaName="東京駅周辺（波を SDF に合成）"
+  mode="waves"
+/>
