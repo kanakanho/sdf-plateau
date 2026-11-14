@@ -1,9 +1,11 @@
 ---
 /**
  * Viewer page shell: meta tags and the control panel. The WebGPU app is started by the
- * bundled module script below.
+ * bundled module script below; the page mode is handed over through data-* attributes.
  */
+import { readFileSync } from 'node:fs';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { parseAreaList } from '../data/area';
 import '../style.css';
 
 export type Props = {
@@ -14,9 +16,20 @@ export type Props = {
   path: string;
   /** subtitle next to the heading */
   areaName: string;
+  /** 'station': Tokyo Station LOD2 (single bake); 'area': streamed LOD1 tiles of `slug` */
+  mode: 'station' | 'area';
+  slug?: string;
 };
 
-const { title, description, path, areaName } = Astro.props;
+const { title, description, path, areaName, mode, slug = '' } = Astro.props;
+const readAreaList = () => {
+  try {
+    return readFileSync('public/data/areas.json', 'utf8');
+  } catch {
+    return null;
+  }
+};
+const areas = parseAreaList(readAreaList());
 const ogUrl = new URL(path, Astro.site).href;
 const ogImage = new URL('/ogp.jpg', Astro.site).href;
 ---
@@ -37,7 +50,7 @@ const ogImage = new URL('/ogp.jpg', Astro.site).href;
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
   </head>
-  <body>
+  <body data-mode={mode} data-slug={slug}>
     <div id="map"></div>
     <button id="panel-show" type="button" title="パネルを表示" aria-label="パネルを表示">☰</button>
     <aside id="panel">
@@ -45,12 +58,22 @@ const ogImage = new URL('/ogp.jpg', Astro.site).href;
         <h1>SDF PLATEAU <small>{areaName}</small></h1>
         <button id="panel-hide" type="button" title="パネルを隠す" aria-label="パネルを隠す">×</button>
       </header>
-      <label>描画
-        <select id="mode">
-          <option value="sdf">SDF レイマーチ</option>
-          <option value="raster">ラスタ（比較用）</option>
-        </select>
-      </label>
+      {areas.length > 0 && (
+        <label>地域
+          <select id="area">
+            <option value="" selected={mode === 'station'}>東京駅周辺（LOD2）</option>
+            {areas.map((a) => <option value={a.slug} selected={a.slug === slug}>{a.name}（LOD1）</option>)}
+          </select>
+        </label>
+      )}
+      {mode === 'station' && (
+        <label>描画
+          <select id="mode">
+            <option value="sdf">SDF レイマーチ</option>
+            <option value="raster">ラスタ（比較用）</option>
+          </select>
+        </label>
+      )}
       <label>色分け
         <select id="color">
           <option value="0">面の種類</option>
@@ -67,7 +90,7 @@ const ogImage = new URL('/ogp.jpg', Astro.site).href;
         <label class="check"><input id="shadows" type="checkbox" /> 影（ソフトシャドウ）</label>
         <label class="check"><input id="groundShadows" type="checkbox" /> 地面の影</label>
         <label class="check"><input id="ao" type="checkbox" /> アンビエントオクルージョン</label>
-        <label class="check"><input id="refine" type="checkbox" /> 交点を三角形で補正</label>
+        {mode === 'station' && <label class="check"><input id="refine" type="checkbox" /> 交点を三角形で補正</label>}
         <label class="check"><input id="picking" type="checkbox" /> クリックで建物を選択</label>
       </fieldset>
       <label class="row">解像度 <input id="scale" type="range" min="0.25" max="1" step="0.05" /> <span id="scale-label"></span></label>

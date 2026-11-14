@@ -29,14 +29,23 @@ const GSI_ATTRIBUTION = '<a href="https://maps.gsi.go.jp/development/ichiran.htm
  * Credit for the redistributed (processed) PLATEAU data. Shown through the attribution control
  * so it stays visible whatever the base map is, including the plain white one.
  */
-export const PLATEAU_ATTRIBUTION =
-  '<a href="https://www.geospatial.jp/ckan/dataset/plateau-13101-chiyoda-ku-2025" target="_blank">3D都市モデル（PLATEAU）千代田区</a>を加工して作成';
+const escapeHtml = (s: string): string =>
+  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
+/** Credit for one processed PLATEAU dataset (name and distribution page). */
+export const plateauAttribution = (name: string, url: string): string =>
+  `<a href="${escapeHtml(url)}" target="_blank">${escapeHtml(name)}</a>を加工して作成`;
+
+export const PLATEAU_ATTRIBUTION = plateauAttribution(
+  '3D都市モデル（PLATEAU）千代田区',
+  'https://www.geospatial.jp/ckan/dataset/plateau-13101-chiyoda-ku-2025',
+);
 
 /** MapLibre's own credit (its default custom attribution, kept when we add ours). */
 export const MAPLIBRE_ATTRIBUTION = '<a href="https://maplibre.org/" target="_blank">MapLibre</a>';
 
 /** Custom attributions for the map: MapLibre plus the processed PLATEAU data. */
-export const mapAttributions = (): string[] => [MAPLIBRE_ATTRIBUTION, PLATEAU_ATTRIBUTION];
+export const mapAttributions = (plateau: string = PLATEAU_ATTRIBUTION): string[] => [MAPLIBRE_ATTRIBUTION, plateau];
 
 /** Base map style: GSI (地理院タイル) raster tiles, or a plain white background without tiles. */
 export const baseMapStyle = (base: BaseMap = 'pale'): StyleSpecification =>

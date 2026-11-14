@@ -8,6 +8,7 @@ import {
   clampToDaylight,
   daylightRange,
   formatMinutes,
+  areaPagePath,
   nextDaylightMinute,
 } from './viewState';
 
@@ -36,7 +37,8 @@ export const bindControls = (
   afterStyleChange: () => void,
   origin: { readonly lat: number; readonly lng: number },
 ): void => {
-  const mode = $<HTMLSelectElement>('mode');
+  // absent on area pages (SDF only, no triangles on the GPU)
+  const mode = document.getElementById('mode') as HTMLSelectElement | null;
   const color = $<HTMLSelectElement>('color');
   const scale = $<HTMLInputElement>('scale');
   const scaleLabel = $<HTMLSpanElement>('scale-label');
@@ -46,7 +48,7 @@ export const bindControls = (
   const play = $<HTMLButtonElement>('play');
   const base = $<HTMLSelectElement>('base');
 
-  mode.value = initial.mode;
+  if (mode) mode.value = initial.mode;
   color.value = String(initial.colorMode);
   scale.value = String(initial.renderScale);
   scaleLabel.textContent = `${Math.round(initial.renderScale * 100)}%`;
@@ -54,7 +56,7 @@ export const bindControls = (
   time.value = String(initial.minutes);
   timeLabel.textContent = formatMinutes(initial.minutes);
 
-  mode.onchange = () => update({ mode: mode.value as RenderMode });
+  if (mode) mode.onchange = () => update({ mode: mode.value as RenderMode });
   color.onchange = () => update({ colorMode: Number(color.value) as ColorModeCode });
   scale.oninput = () => {
     scaleLabel.textContent = `${Math.round(Number(scale.value) * 100)}%`;
@@ -65,7 +67,8 @@ export const bindControls = (
     update({ minutes: Number(time.value) });
   };
   for (const key of ['shadows', 'ao', 'refine', 'groundShadows', 'picking'] as const) {
-    const box = $<HTMLInputElement>(key);
+    const box = document.getElementById(key) as HTMLInputElement | null;
+    if (!box) continue;
     box.checked = initial[key];
     box.onchange = () => update({ [key]: box.checked });
   }
@@ -108,4 +111,10 @@ export const bindControls = (
     play.textContent = playing ? '⏸' : '▶';
     if (playing) requestAnimationFrame(tick);
   };
+};
+
+/** The area selector navigates to the chosen area's page (each page is a separate document). */
+export const bindAreaSelect = (): void => {
+  const select = document.getElementById('area') as HTMLSelectElement | null;
+  if (select) select.onchange = () => location.assign(areaPagePath(select.value));
 };

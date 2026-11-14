@@ -7,6 +7,7 @@ import {
   createSyncLayer,
   extractMercatorMatrix,
   mapAttributions,
+  plateauAttribution,
 } from './syncLayer';
 
 const fakeInput = (m: number[]) =>
@@ -60,7 +61,19 @@ describe('PLATEAU_ATTRIBUTION', () => {
   });
 });
 
+describe('plateauAttribution', () => {
+  it('links the dataset and escapes its name and url', () => {
+    expect(plateauAttribution('3D都市モデル（PLATEAU）名古屋市', 'https://example.org/a?b=1&c=2')).toBe(
+      '<a href="https://example.org/a?b=1&amp;c=2" target="_blank">3D都市モデル（PLATEAU）名古屋市</a>を加工して作成',
+    );
+    expect(plateauAttribution('<b>', 'x')).toContain('&lt;b&gt;');
+  });
+});
+
 describe('mapAttributions', () => {
+  it('uses a given PLATEAU credit', () => {
+    expect(mapAttributions('X')).toEqual([MAPLIBRE_ATTRIBUTION, 'X']);
+  });
   it('keeps the MapLibre credit next to the PLATEAU credit', () => {
     expect(mapAttributions()).toEqual([MAPLIBRE_ATTRIBUTION, PLATEAU_ATTRIBUTION]);
     expect(MAPLIBRE_ATTRIBUTION).toContain('https://maplibre.org/');

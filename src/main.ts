@@ -1,7 +1,11 @@
+import { startAreaApp } from './app/areaApp';
 import { startApp } from './app/app';
-import { setStatus } from './app/controls';
+import { bindAreaSelect, setStatus } from './app/controls';
 
-startApp(document.getElementById('map')!).catch((e: unknown) => {
+const { mode, slug } = document.body.dataset;
+const container = document.getElementById('map')!;
+bindAreaSelect();
+(mode === 'area' && slug ? startAreaApp(container, slug) : startApp(container)).catch((e: unknown) => {
   console.error(e);
   setStatus(`エラー: ${e instanceof Error ? e.message : String(e)}`);
 });
