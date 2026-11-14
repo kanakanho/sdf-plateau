@@ -38,6 +38,13 @@ pnpm build                    # areas.json の地域ごとに /<slug>/ の HTML 
 - 地域を増やすときは `scripts/preprocess/areas.ts` に設定を追記して前処理を実行し、`public/data/ATTRIBUTION.md` に出典を追記します
 - 静的サイト（SSG）で、サーバ側の処理はありません
 
+## ドキュメント
+
+前処理・配信・描画前の処理・レンダリングパイプラインの詳細（図解つき）:
+
+- [docs/lod2-station.md](docs/lod2-station.md): 東京駅ページ（`/`、LOD2、1 回のベイク）
+- [docs/lod1-areas.md](docs/lod1-areas.md): 地域ページ（`/<slug>/`、LOD1、タイルのストリーミング）
+
 ## 処理の流れ
 
 1. **前処理（Node）** `scripts/preprocess/`
